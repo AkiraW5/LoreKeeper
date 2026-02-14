@@ -130,8 +130,6 @@ Cole as chaves na página de **Configurações** do app.
 
 - Interface em **português do Brasil**
 - Tema **escuro** como padrão
-- Datas no formato **dd/mm/yyyy**
-- Tempo no formato **HH:MM:SS**
 - Dados salvos localmente via SQLite (WebAssembly)
 - Sincronização com a nuvem via pasta customizada
 

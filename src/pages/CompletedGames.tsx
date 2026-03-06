@@ -25,6 +25,7 @@ const defaultGame: Omit<CompletedGame, 'id' | 'created_at' | 'updated_at'> = {
   completion_condition: 'Termine o jogo',
   is_gold: false,
   mission_complete: false,
+  mission_id: '',
   notes: '',
   cover_url: '',
   description: '',
@@ -44,11 +45,21 @@ export default function CompletedGamesPage() {
   const [sortAsc, setSortAsc] = useState(false);
   const [filterGenre, setFilterGenre] = useState('');
   const [filterConsole, setFilterConsole] = useState('');
+  const [missionsList, setMissionsList] = useState<any[]>([]);
 
   useEffect(() => { loadItems(); }, []);
 
+  async function recalcMissionCompletedCount(missionId: string) {
+    if (!missionId) return;
+    await window.api.db.run(
+      'UPDATE main_missions SET completed_games = (SELECT COUNT(*) FROM completed_games WHERE mission_id = ? AND mission_complete = 1) WHERE id = ?',
+      [missionId, missionId]
+    );
+  }
+
   async function loadItems() {
     setItems(await window.api.db.getAll('completed_games', 'completion_date DESC'));
+    setMissionsList(await window.api.db.getAll('main_missions', 'created_at DESC'));
   }
 
   function openAdd() { setEditing(null); setFormData({ ...defaultGame }); setModalOpen(true); }
@@ -59,7 +70,7 @@ export default function CompletedGamesPage() {
       name: item.name, console: item.console, genre: item.genre, type: item.type,
       completion_date: item.completion_date, play_time: item.play_time, rating: item.rating,
       difficulty: item.difficulty as any, completion_condition: item.completion_condition,
-      is_gold: !!item.is_gold, mission_complete: !!item.mission_complete, notes: item.notes,
+      is_gold: !!item.is_gold, mission_complete: !!item.mission_complete, mission_id: (item as any).mission_id || '', notes: item.notes,
       cover_url: item.cover_url || '', description: item.description || '', developer: item.developer || '',
     });
     setModalOpen(true);
@@ -67,16 +78,24 @@ export default function CompletedGamesPage() {
 
   async function save() {
     if (!formData.name.trim()) return;
+    const normalizedMissionComplete = formData.mission_id ? formData.mission_complete : false;
     const data = {
       ...formData,
       is_gold: formData.is_gold ? 1 : 0,
-      mission_complete: formData.mission_complete ? 1 : 0,
+      mission_complete: normalizedMissionComplete ? 1 : 0,
       updated_at: new Date().toISOString(),
     };
     if (editing) {
+      const previousMissionId = (editing as any).mission_id || '';
       await window.api.db.update('completed_games', editing.id, data);
+      const nextMissionId = (data as any).mission_id || '';
+      await recalcMissionCompletedCount(previousMissionId);
+      if (nextMissionId !== previousMissionId) {
+        await recalcMissionCompletedCount(nextMissionId);
+      }
     } else {
       await window.api.db.insert('completed_games', { id: generateId(), ...data, created_at: new Date().toISOString() });
+      await recalcMissionCompletedCount((data as any).mission_id || '');
     }
     setModalOpen(false);
     loadItems();
@@ -84,7 +103,9 @@ export default function CompletedGamesPage() {
 
   async function deleteItem() {
     if (!deleteTarget) return;
+    const missionId = (deleteTarget as any).mission_id || '';
     await window.api.db.delete('completed_games', deleteTarget.id);
+    await recalcMissionCompletedCount(missionId);
     setDeleteTarget(null);
     loadItems();
   }
@@ -176,6 +197,9 @@ export default function CompletedGamesPage() {
                     ) : null}
                     <span className="font-medium text-dark-100">{item.name}</span>
                     {!!item.is_gold && <span className="text-yellow-400 text-[10px]" title="100% / Platina">🏆</span>}
+                    {!!(item as any).mission_complete && !!(item as any).mission_id && (
+                      <span className="text-green-400 text-[10px]" title="Missão Completa">🎯</span>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-2.5 text-dark-300">{item.console}</td>
@@ -257,6 +281,15 @@ export default function CompletedGamesPage() {
               }}
             />
           </div>
+          <div>
+            <label className="block text-xs font-medium text-dark-300 mb-1">Missão (opcional)</label>
+            <select value={(formData as any).mission_id || ''} onChange={e => setFormData(f => ({ ...f, mission_id: e.target.value, mission_complete: e.target.value ? f.mission_complete : false }))} className="select-field">
+              <option value="">Nenhuma</option>
+              {missionsList.map(m => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </div>
 
           {/* Cover Preview */}
           {formData.cover_url && (
@@ -319,9 +352,18 @@ export default function CompletedGamesPage() {
               <span className="text-sm text-dark-200">🏆 Gold / Platina</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={formData.mission_complete} onChange={e => setFormData(f => ({ ...f, mission_complete: e.target.checked }))} className="accent-green-400 w-4 h-4" />
+              <input
+                type="checkbox"
+                checked={formData.mission_complete}
+                disabled={!(formData as any).mission_id}
+                onChange={e => setFormData(f => ({ ...f, mission_complete: e.target.checked }))}
+                className="accent-green-400 w-4 h-4 disabled:opacity-50"
+              />
               <span className="text-sm text-dark-200">✔ Missão Completa</span>
             </label>
+            {!(formData as any).mission_id && (
+              <span className="text-xs text-dark-400">Selecione uma missão para habilitar esse marcador.</span>
+            )}
           </div>
         </div>
         <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-dark-600">

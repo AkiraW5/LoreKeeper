@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('api', {
     getConfig: () => ipcRenderer.invoke('settings:getConfig'),
     selectDbFolder: () => ipcRenderer.invoke('settings:selectDbFolder'),
     setDbFolder: (folder: string | null) => ipcRenderer.invoke('settings:setDbFolder', folder),
+    selectImage: () => ipcRenderer.invoke('settings:selectImage'),
   },
 
   // API Search
@@ -36,6 +37,8 @@ contextBridge.exposeInMainWorld('api', {
     tvShowDetails: (tmdbId: number) => ipcRenderer.invoke('api:tvShowDetails', tmdbId),
     books: (query: string) => ipcRenderer.invoke('api:searchBooks', query),
   },
+
+  // Helpers
 
   // Config (API keys)
   config: {

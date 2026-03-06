@@ -165,12 +165,14 @@ function createTables() {
     `CREATE TABLE IF NOT EXISTS game_series (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
+      cover_url TEXT DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
     `CREATE TABLE IF NOT EXISTS game_series_entries (
       id TEXT PRIMARY KEY,
       series_id TEXT NOT NULL,
       name TEXT NOT NULL,
+      cover_url TEXT DEFAULT '',
       is_main INTEGER NOT NULL DEFAULT 1,
       is_completed INTEGER NOT NULL DEFAULT 0,
       completion_date TEXT DEFAULT '',
@@ -185,6 +187,7 @@ function createTables() {
       total_games INTEGER NOT NULL DEFAULT 0,
       completed_games INTEGER NOT NULL DEFAULT 0,
       target_date TEXT DEFAULT '',
+      cover_url TEXT DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
@@ -321,6 +324,7 @@ function runMigrations() {
     'ALTER TABLE completed_games ADD COLUMN cover_url TEXT DEFAULT ""',
     'ALTER TABLE completed_games ADD COLUMN description TEXT DEFAULT ""',
     'ALTER TABLE completed_games ADD COLUMN developer TEXT DEFAULT ""',
+    'ALTER TABLE completed_games ADD COLUMN mission_id TEXT DEFAULT ""',
     'ALTER TABLE game_backlog ADD COLUMN cover_url TEXT DEFAULT ""',
     'ALTER TABLE game_backlog ADD COLUMN description TEXT DEFAULT ""',
     'ALTER TABLE movies ADD COLUMN cover_url TEXT DEFAULT ""',
@@ -332,6 +336,9 @@ function runMigrations() {
     'ALTER TABLE manga ADD COLUMN cover_url TEXT DEFAULT ""',
     'ALTER TABLE books ADD COLUMN cover_url TEXT DEFAULT ""',
     'ALTER TABLE books ADD COLUMN description TEXT DEFAULT ""',
+    'ALTER TABLE main_missions ADD COLUMN cover_url TEXT DEFAULT ""',
+    'ALTER TABLE game_series ADD COLUMN cover_url TEXT DEFAULT ""',
+    'ALTER TABLE game_series_entries ADD COLUMN cover_url TEXT DEFAULT ""',
   ];
   for (const sql of columns) {
     try { db.run(sql); } catch { /* column already exists */ }

@@ -8,6 +8,8 @@ Aplicativo desktop pessoal para rastrear mídias consumidas — jogos, filmes, s
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/License-Non--Commercial-blue)
 
+Versão atual: **1.1.0**
+
 ---
 
 ## Instalação (Windows)
@@ -45,9 +47,9 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 
 ### 🎮 Jogos
 
-- **Jogos Zerados** — Lista completa com nome, console, gênero, tipo, data, tempo, nota (1-11), dificuldade (C/B/A/AA/AAA), condição de zeramento, gold/platina
+- **Jogos Zerados** — Lista completa com nome, console, gênero, tipo, data, tempo, nota (1-11), dificuldade (C/B/A/AA/AAA), condição de zeramento, gold/platina e marcador de missão completa
 - **Backlog** — Jogos planejados com estimativa de horas, vontade de jogar (1-5), se possui o jogo, se está jogando
-- **Séries de Jogos** — Tracking de progresso por franquia (Final Fantasy, Castlevania, Zelda, etc.)
+- **Séries de Jogos** — Tracking por franquia com busca via API, capa por entrada, edição de nome e vínculo com jogos zerados
 - **Roleta** — Não sabe o que jogar? A roleta escolhe por você com filtros personalizados
 
 ### 🎬 Mídia
@@ -67,14 +69,32 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 
 ### 🎯 Missões & Conquistas
 
-- **Missões** — Crie objetivos personalizados com prazo e progresso
+- **Missões** — Crie objetivos personalizados com prazo, progresso e capa/foto
 - **Conquistas** — Sistema de XP e nível baseado nas suas atividades
+- **Integração com Jogos Zerados** — Vincule jogos a missões e atualize progresso automaticamente
+
+## Novidades da 1.1.0
+
+- Open Library adicionado como fonte principal para metadados de livros (com fallback para Google Books)
+- Melhorias em Séries de Jogos:
+  - Auto-vínculo mais preciso com jogos zerados
+  - Busca por API ao adicionar e editar entradas
+  - Persistência de capa por entrada da série
+  - Correção do bug visual de `0` no checkbox
+- Melhorias em Jogos Zerados:
+  - Fluxo de `Missão Completa` corrigido
+  - Indicador visual (`🎯`) para jogos marcados como missão completa
+  - Recontagem de progresso da missão em criação, edição e exclusão
+- Melhorias em Missões:
+  - Upload/seleção de imagem para missão
+  - Criação e listagem com visual de capa
 
 ### 🔍 Busca de Metadados via API
 
 - **RAWG.io** — Busca automática de capas, descrições e dados de jogos
 - **TMDB** — Busca de capas e sinopses para filmes, séries e animes
-- **Google Books** — Busca de capas e dados de livros (sem chave necessária)
+- **Open Library** — Fonte principal para livros
+- **Google Books** — Fallback para busca de livros (sem chave necessária)
 - Ao adicionar qualquer mídia, clique em "Buscar" para preencher automaticamente
 
 ### ⚙️ Configurações
@@ -130,6 +150,8 @@ Cole as chaves na página de **Configurações** do app.
 
 - Interface em **português do Brasil**
 - Tema **escuro** como padrão
+- Datas no formato **dd/mm/yyyy**
+- Tempo no formato **HH:MM:SS**
 - Dados salvos localmente via SQLite (WebAssembly)
 - Sincronização com a nuvem via pasta customizada
 

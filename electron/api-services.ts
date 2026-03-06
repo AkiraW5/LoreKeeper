@@ -203,11 +203,43 @@ export async function getTvShowDetails(tmdbId: number, apiKey: string): Promise<
 }
 
 // ==========================================
-// Google Books — Livros / Mangás / Light Novels
+// Open Library + Google Books — Livros / Mangás / Light Novels
 // ==========================================
 
-export async function searchBooks(query: string): Promise<BookSearchResult[]> {
-  if (!query.trim()) return [];
+const OL_COVER = 'https://covers.openlibrary.org/b/olid';
+
+async function searchBooksOpenLibrary(query: string): Promise<BookSearchResult[]> {
+  try {
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_edition_key,first_sentence,number_of_pages_median,subject,edition_key,cover_i&language=por,eng`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.docs || [])
+      .filter((b: any) => b.title)
+      .slice(0, 8)
+      .map((b: any) => {
+        // Build cover URL — prefer cover_edition_key (OLID), fallback to cover_i (ID)
+        let cover_url = '';
+        if (b.cover_edition_key) {
+          cover_url = `${OL_COVER}/${b.cover_edition_key}-M.jpg`;
+        } else if (b.cover_i) {
+          cover_url = `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg`;
+        }
+        return {
+          title: b.title,
+          author: (b.author_name || []).join(', '),
+          cover_url,
+          description: Array.isArray(b.first_sentence) ? b.first_sentence[0] || '' : (b.first_sentence || ''),
+          total_pages: b.number_of_pages_median || 0,
+          genre: (b.subject || [])[0] || '',
+        };
+      });
+  } catch {
+    return [];
+  }
+}
+
+async function searchBooksGoogle(query: string): Promise<BookSearchResult[]> {
   try {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=8&langRestrict=pt`;
     const res = await fetch(url);
@@ -224,4 +256,15 @@ export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   } catch {
     return [];
   }
+}
+
+export async function searchBooks(query: string): Promise<BookSearchResult[]> {
+  if (!query.trim()) return [];
+
+  // Try Open Library first (better covers, no API key needed)
+  const olResults = await searchBooksOpenLibrary(query);
+  if (olResults.length > 0) return olResults;
+
+  // Fallback to Google Books
+  return searchBooksGoogle(query);
 }

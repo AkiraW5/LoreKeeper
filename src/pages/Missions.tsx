@@ -11,6 +11,7 @@ const defaultMission: Omit<MainMission, 'id' | 'created_at' | 'updated_at'> = {
   total_games: 0,
   completed_games: 0,
   target_date: '',
+  cover_url: '',
 };
 
 export default function MissionsPage() {
@@ -41,6 +42,7 @@ export default function MissionsPage() {
       total_games: m.total_games,
       completed_games: m.completed_games,
       target_date: m.target_date,
+      cover_url: (m as any).cover_url || '',
     });
     setModalOpen(true);
   }
@@ -117,6 +119,9 @@ export default function MissionsPage() {
                   {m.description && (
                     <p className="text-sm text-dark-400 mt-1 ml-7">{m.description}</p>
                   )}
+                  {m.cover_url && (
+                    <img src={m.cover_url} alt="" className="w-16 h-20 object-cover rounded ml-7 mt-2" />
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => syncFromGames(m)} className="p-1.5 rounded hover:bg-dark-600 transition-colors" title="Sincronizar com jogos zerados">
@@ -168,6 +173,16 @@ export default function MissionsPage() {
       {/* Modal */}
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Missão' : 'Nova Missão'} width="max-w-lg">
         <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-dark-300 mb-1">Foto da Missão</label>
+              <div className="flex items-center gap-3">
+                <input type="text" value={formData.cover_url} onChange={e => setFormData(f => ({ ...f, cover_url: e.target.value }))} placeholder="URL da imagem (ou use Selecionar)" className="input-field" />
+                <button onClick={async () => {
+                  const p = await (window as any).api.settings.selectImage();
+                  if (p) setFormData(f => ({ ...f, cover_url: p }));
+                }} className="btn-secondary">Selecionar</button>
+              </div>
+            </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">Nome da Missão</label>
             <input

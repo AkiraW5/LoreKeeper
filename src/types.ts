@@ -53,6 +53,7 @@ export interface GameSeriesEntry {
   id: string;
   series_id: string;
   name: string;
+  cover_url: string;
   is_main: boolean;
   is_completed: boolean;
   completion_date: string;

@@ -6,7 +6,22 @@ import { searchGames, getGameDetails, searchMovies, getMovieDetails, searchTvSho
 
 let mainWindow: BrowserWindow | null = null;
 
+function resolveWindowIconPath(): string | undefined {
+  const isWin = process.platform === 'win32';
+  const iconFile = isWin ? 'icon.ico' : 'icon.png';
+  const candidates = [
+    // Dev: project root
+    path.join(process.cwd(), 'build', iconFile),
+    path.join(process.cwd(), 'public', 'icon.png'),
+    // Prod: copied via extraResources
+    path.join(process.resourcesPath, iconFile),
+  ];
+
+  return candidates.find(p => fs.existsSync(p));
+}
+
 function createWindow() {
+  const iconPath = resolveWindowIconPath();
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -14,6 +29,7 @@ function createWindow() {
     minHeight: 700,
     frame: false,
     backgroundColor: '#0a0a0e',
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -70,7 +86,8 @@ ipcMain.handle('window:close', (event) => {
 // Whitelist de tabelas válidas para evitar SQL injection
 const ALLOWED_TABLES = [
   'completed_games', 'game_backlog', 'game_series', 'game_series_entries',
-  'movies', 'tv_shows', 'animes', 'manga', 'books', 'missions', 'achievements',
+  'movies', 'tv_shows', 'animes', 'manga', 'books', 'main_missions', 'achievements',
+  'game_series_entries_link', 'user_profile', 'achievements',
 ];
 
 function assertTable(table: string) {
@@ -185,6 +202,30 @@ function setupIpcHandlers() {
     // Reinitialize database with new path
     await initDatabase();
     return { success: true, newPath: getDbPath() };
+  });
+
+  // Select an image file and copy to userData missions folder
+  ipcMain.handle('settings:selectImage', async () => {
+    const result = await dialog.showOpenDialog(mainWindow!, {
+      title: 'Selecionar imagem para missão',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Imagens', extensions: ['png', 'jpg', 'jpeg', 'webp'] },
+      ],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    const src = result.filePaths[0];
+    const userDir = app.getPath('userData');
+    const destDir = path.join(userDir, 'missions');
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+    const base = path.basename(src);
+    const dest = path.join(destDir, `${Date.now()}-${base}`);
+    try {
+      fs.copyFileSync(src, dest);
+      return `file://${dest}`;
+    } catch {
+      return null;
+    }
   });
 
   // === API SEARCH ===

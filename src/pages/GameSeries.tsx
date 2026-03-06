@@ -3,6 +3,7 @@ import { Plus, Trash2, ChevronDown, ChevronRight, Layers, Check, Edit3, Link2, U
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
+import ApiSearchBox from '../components/ApiSearchBox';
 import { GameSeries, GameSeriesEntry, CompletedGame } from '../types';
 import { generateId, formatDateBR } from '../lib/utils';
 
@@ -16,7 +17,10 @@ export default function GameSeriesPage() {
   const [linkModal, setLinkModal] = useState<GameSeriesEntry | null>(null);
   const [newSeriesName, setNewSeriesName] = useState('');
   const [newEntryName, setNewEntryName] = useState('');
+  const [newEntryCoverUrl, setNewEntryCoverUrl] = useState('');
   const [newEntryIsMain, setNewEntryIsMain] = useState(true);
+  const [editEntryName, setEditEntryName] = useState('');
+  const [editEntryCoverUrl, setEditEntryCoverUrl] = useState('');
   const [editEntryDate, setEditEntryDate] = useState('');
   const [editEntryCompleted, setEditEntryCompleted] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'series' | 'entry'; id: string; name: string } | null>(null);
@@ -29,19 +33,29 @@ export default function GameSeriesPage() {
 
   async function loadSeries() {
     const series = await window.api.db.getAll('game_series', 'name ASC');
+    // Load all completed games once to map linked entries
+    const completed = await window.api.db.getAll('completed_games', 'name ASC');
+    const completedMap: Record<string, any> = {};
+    for (const g of completed) completedMap[g.id] = g;
+
     const withEntries = await Promise.all(
       series.map(async (s: any) => {
         const entries = await window.api.db.query(
           'SELECT gse.*, gsel.completed_game_id as linked_game_id FROM game_series_entries gse LEFT JOIN game_series_entries_link gsel ON gsel.entry_id = gse.id WHERE gse.series_id = ? ORDER BY gse.sort_order ASC, gse.name ASC',
           [s.id]
         );
-        const mainEntries = entries.filter((e: any) => e.is_main);
-        const spinoffEntries = entries.filter((e: any) => !e.is_main);
+        // Attach linked game object if present
+        const enhanced = entries.map((e: any) => ({
+          ...e,
+          linked_game: e.linked_game_id ? completedMap[e.linked_game_id] : null,
+        }));
+        const mainEntries = enhanced.filter((e: any) => e.is_main);
+        const spinoffEntries = enhanced.filter((e: any) => !e.is_main);
         return {
           ...s,
-          entries,
-          totalCount: entries.length,
-          completedCount: entries.filter((e: any) => e.is_completed).length,
+          entries: enhanced,
+          totalCount: enhanced.length,
+          completedCount: enhanced.filter((e: any) => e.is_completed).length,
           mainCount: mainEntries.length,
           mainCompleted: mainEntries.filter((e: any) => e.is_completed).length,
           spinoffCount: spinoffEntries.length,
@@ -85,6 +99,7 @@ export default function GameSeriesPage() {
       id: generateId(),
       series_id: addEntryModal,
       name: newEntryName.trim(),
+      cover_url: newEntryCoverUrl || '',
       is_main: newEntryIsMain ? 1 : 0,
       is_completed: 0,
       completion_date: '',
@@ -92,6 +107,7 @@ export default function GameSeriesPage() {
       created_at: new Date().toISOString(),
     });
     setNewEntryName('');
+    setNewEntryCoverUrl('');
     setNewEntryIsMain(true);
     setAddEntryModal(null);
     loadSeries();
@@ -107,6 +123,8 @@ export default function GameSeriesPage() {
 
   function openEditEntry(entry: GameSeriesEntry) {
     setEditEntryModal(entry);
+    setEditEntryName(entry.name || '');
+    setEditEntryCoverUrl((entry as any).cover_url || '');
     setEditEntryDate(entry.completion_date || '');
     setEditEntryCompleted(!!entry.is_completed);
   }
@@ -114,10 +132,14 @@ export default function GameSeriesPage() {
   async function saveEntryEdit() {
     if (!editEntryModal) return;
     await window.api.db.update('game_series_entries', editEntryModal.id, {
+      name: editEntryName.trim() || editEntryModal.name,
+      cover_url: editEntryCoverUrl || '',
       is_completed: editEntryCompleted ? 1 : 0,
       completion_date: editEntryDate,
     });
     setEditEntryModal(null);
+    setEditEntryName('');
+    setEditEntryCoverUrl('');
     loadSeries();
   }
 
@@ -156,13 +178,38 @@ export default function GameSeriesPage() {
       [seriesId]
     );
     const games = await window.api.db.getAll('completed_games', 'name ASC');
+    // Prevent assigning the same completed game to multiple entries
+    const usedGameIds = new Set<string>();
+
+    const normalize = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9\s]+/g, '').replace(/\s+/g, ' ').trim();
+    const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     for (const entry of entries) {
       if ((entry as any).linked_game_id) continue;
-      const match = games.find((g: any) =>
-        g.name.toLowerCase().includes((entry as any).name.toLowerCase()) ||
-        (entry as any).name.toLowerCase().includes(g.name.toLowerCase())
-      );
+      const entryName = (entry as any).name || '';
+      const entryNorm = normalize(entryName);
+      if (!entryNorm) continue;
+
+      // 1) Prefer exact normalized name matches
+      let match = games.find((g: any) => !usedGameIds.has(g.id) && normalize(g.name) === entryNorm);
+
+      // 2) Then prefer whole-word match (e.g. "Chronicles" matching whole word in game name)
+      if (!match) {
+        const re = new RegExp('\\b' + escapeRegExp(entryNorm).replace(/\s+/g, '\\s+') + '\\b');
+        match = games.find((g: any) => !usedGameIds.has(g.id) && re.test(normalize(g.name)));
+      }
+
+      // 3) Fallback: substring match but only for reasonably long names and unused games
+      if (!match && entryNorm.length > 3) {
+        match = games.find((g: any) => {
+          if (usedGameIds.has(g.id)) return false;
+          const gNorm = normalize(g.name);
+          return gNorm.includes(entryNorm) || entryNorm.includes(gNorm);
+        });
+      }
+
       if (match) {
+        usedGameIds.add(match.id);
         await window.api.db.run(
           'INSERT OR IGNORE INTO game_series_entries_link (entry_id, completed_game_id) VALUES (?, ?)',
           [entry.id, match.id]
@@ -377,16 +424,32 @@ export default function GameSeriesPage() {
       <Modal isOpen={!!addEntryModal} onClose={() => setAddEntryModal(null)} title="Adicionar Jogo à Série" width="max-w-md">
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-dark-300 mb-1">Nome do Jogo</label>
-            <input
-              type="text"
+            <ApiSearchBox
               value={newEntryName}
-              onChange={e => setNewEntryName(e.target.value)}
-              className="input-field"
+              onChange={setNewEntryName}
               placeholder="Ex: Final Fantasy VII Remake"
-              onKeyDown={e => e.key === 'Enter' && addEntry()}
+              label="Nome do Jogo"
+              onSearch={async (query) => {
+                const results = await window.api.search.games(query);
+                return results.map((r: any) => ({
+                  id: r.rawg_id,
+                  title: r.name,
+                  subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
+                  cover_url: r.cover_url,
+                }));
+              }}
+              onSelect={async (result) => {
+                setNewEntryName(result.title);
+                setNewEntryCoverUrl(result.cover_url || '');
+              }}
             />
           </div>
+          {newEntryCoverUrl && (
+            <div className="px-3 py-3 bg-dark-700/30 rounded-xl flex items-center gap-3">
+              <img src={newEntryCoverUrl} alt="" className="w-14 h-20 object-cover rounded bg-dark-700" />
+              <p className="text-xs text-dark-400">Capa será salva junto com a entrada da série.</p>
+            </div>
+          )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -398,15 +461,48 @@ export default function GameSeriesPage() {
           </label>
         </div>
         <div className="flex justify-end gap-3 mt-6">
-          <button onClick={() => setAddEntryModal(null)} className="btn-secondary">Cancelar</button>
+          <button onClick={() => {
+            setAddEntryModal(null);
+            setNewEntryName('');
+            setNewEntryCoverUrl('');
+            setNewEntryIsMain(true);
+          }} className="btn-secondary">Cancelar</button>
           <button onClick={addEntry} className="btn-primary">Adicionar</button>
         </div>
       </Modal>
 
       {/* Edit Entry Modal */}
-      <Modal isOpen={!!editEntryModal} onClose={() => setEditEntryModal(null)} title="Editar Jogo" width="max-w-md">
+      <Modal isOpen={!!editEntryModal} onClose={() => {
+        setEditEntryModal(null);
+        setEditEntryName('');
+        setEditEntryCoverUrl('');
+      }} title="Editar Jogo" width="max-w-lg">
         <div className="space-y-4">
-          <p className="text-sm font-medium text-dark-100">{editEntryModal?.name}</p>
+          <ApiSearchBox
+            value={editEntryName}
+            onChange={setEditEntryName}
+            placeholder="Ex: Castlevania III: Dracula's Curse"
+            label="Nome do Jogo"
+            onSearch={async (query) => {
+              const results = await window.api.search.games(query);
+              return results.map((r: any) => ({
+                id: r.rawg_id,
+                title: r.name,
+                subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
+                cover_url: r.cover_url,
+              }));
+            }}
+            onSelect={async (result) => {
+              setEditEntryName(result.title);
+              setEditEntryCoverUrl(result.cover_url || '');
+            }}
+          />
+          {editEntryCoverUrl && (
+            <div className="px-3 py-3 bg-dark-700/30 rounded-xl flex items-center gap-3">
+              <img src={editEntryCoverUrl} alt="" className="w-14 h-20 object-cover rounded bg-dark-700" />
+              <p className="text-xs text-dark-400">Capa da entrada da série.</p>
+            </div>
+          )}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -500,29 +596,36 @@ function EntryRow({
   onUnlink: (e: GameSeriesEntry) => void;
   onDelete: (e: GameSeriesEntry) => void;
 }) {
+  const previewCover = (entry as any).cover_url || (entry as any).linked_game?.cover_url || '';
+
   return (
-    <div className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-dark-700/30 group">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between py-2 px-2 rounded hover:bg-dark-700/30 group">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => onToggle(entry)}
-          className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+          className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
             entry.is_completed
               ? 'bg-green-500/20 border-green-500 text-green-400'
               : 'border-dark-500 hover:border-dark-300'
           }`}
         >
-          {entry.is_completed && <Check size={12} />}
+          {!!entry.is_completed && <Check size={12} />}
         </button>
-        <span className={`text-sm ${entry.is_completed ? 'text-dark-300 line-through' : 'text-dark-100'}`}>
-          {entry.name}
-        </span>
-        {entry.linked_game_id && (
-          <span className="text-[9px] bg-accent-500/20 text-accent-300 px-1.5 py-0.5 rounded-full">vinculado</span>
+        {previewCover ? (
+          <img src={previewCover} alt="" className="w-10 h-14 object-cover rounded shadow-sm bg-dark-700" />
+        ) : (
+          <div className="w-10 h-14 bg-dark-800 rounded flex items-center justify-center text-[10px] text-dark-500">No Img</div>
         )}
+        <div>
+          <div className={`text-sm ${entry.is_completed ? 'text-dark-300 line-through' : 'text-dark-100'}`}>{entry.name}</div>
+          {entry.linked_game && <div className="text-xs text-dark-400">Vinculado: {entry.linked_game.name}</div>}
+        </div>
       </div>
       <div className="flex items-center gap-2">
-        {entry.completion_date && (
+        {entry.completion_date ? (
           <span className="text-[10px] text-dark-500 font-mono">{formatDateBR(entry.completion_date)}</span>
+        ) : (
+          <span className="text-[10px] text-dark-500 font-mono">—</span>
         )}
         <button
           onClick={() => onEdit(entry)}
@@ -532,11 +635,11 @@ function EntryRow({
           <Edit3 size={12} className="text-dark-400 hover:text-accent-400" />
         </button>
         <button
-          onClick={() => entry.linked_game_id ? onUnlink(entry) : onLink(entry)}
+          onClick={() => entry.linked_game ? onUnlink(entry) : onLink(entry)}
           className="p-1 rounded hover:bg-dark-600 opacity-0 group-hover:opacity-100 transition-opacity"
-          title={entry.linked_game_id ? 'Desvincular' : 'Vincular com jogo zerado'}
+          title={entry.linked_game ? 'Desvincular' : 'Vincular com jogo zerado'}
         >
-          {entry.linked_game_id ? (
+          {entry.linked_game ? (
             <Unlink size={12} className="text-accent-400 hover:text-red-400" />
           ) : (
             <Link2 size={12} className="text-dark-400 hover:text-green-400" />

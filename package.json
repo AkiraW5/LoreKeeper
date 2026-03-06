@@ -1,6 +1,6 @@
 {
   "name": "lorekeeper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Tracker pessoal de mídias - Jogos, Filmes, Séries, Animes, Mangás, Livros e mais",
   "main": "dist-electron/main.js",
   "author": "Player",
@@ -54,10 +54,21 @@
       {
         "from": "node_modules/sql.js/dist/sql-wasm.wasm",
         "to": "sql-wasm.wasm"
+      },
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
       }
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico",
       "signAndEditExecutable": false
     },

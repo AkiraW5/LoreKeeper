@@ -158,3 +158,10 @@ Cole as chaves na página de **Configurações** do app.
 ## Licença
 
 [Licensed](LICENSE) under GPLv3. Commercial sale of this compiled software by third parties is discouraged and against the spirit of the project.
+
+---
+
+<div align="center">
+  <p>⭐ Se este projeto foi útil para você, considere dar uma estrela! ⭐</p>
+  <p>Desenvolvido com ❤️ e ☕</p>
+</div>

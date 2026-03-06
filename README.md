@@ -157,4 +157,4 @@ Cole as chaves na página de **Configurações** do app.
 
 ## Licença
 
-[Non-Commercial License](LICENSE) — Use, modifique e distribua livremente. Forks são bem-vindos! Apenas uso comercial (venda) é proibido.
+[Licensed](LICENSE) under GPLv3. Commercial sale of this compiled software by third parties is discouraged and against the spirit of the project.

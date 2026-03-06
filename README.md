@@ -6,7 +6,7 @@ Aplicativo desktop pessoal para rastrear mídias consumidas — jogos, filmes, s
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
-![License](https://img.shields.io/badge/License-Non--Commercial-blue)
+![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-blue)
 
 Versão atual: **1.1.0**
 

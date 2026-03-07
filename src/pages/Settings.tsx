@@ -69,7 +69,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 flex flex-col h-full">
+    <div className="p-6 h-full overflow-y-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-dark-100 flex items-center gap-2">
           <Settings size={24} className="text-dark-300" />
@@ -159,7 +159,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-dark-100">LoreKeeper</h2>
-              <p className="text-xs text-dark-400">v1.0.0</p>
+              <p className="text-xs text-dark-400">v1.1.2</p>
             </div>
           </div>
           <p className="text-xs text-dark-400">

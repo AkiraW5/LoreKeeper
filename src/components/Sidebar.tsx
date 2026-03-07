@@ -87,7 +87,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
 
       {/* Footer */}
       <div className="p-4 border-t border-dark-700/50">
-        <p className="text-[10px] text-dark-500 text-center">v1.0.0 • Feito com ♥</p>
+        <p className="text-[10px] text-dark-500 text-center">v1.1.2 • Feito com ♥</p>
       </div>
     </aside>
   );

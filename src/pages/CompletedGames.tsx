@@ -5,7 +5,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
 import {
-  CompletedGame, GAME_GENRES, GAME_TYPES, CONSOLES,
+  CompletedGame, GAME_GENRES, CONSOLES,
   RATING_LABELS, DIFFICULTY_LABELS,
 } from '../types';
 import {
@@ -31,6 +31,101 @@ const defaultGame: Omit<CompletedGame, 'id' | 'created_at' | 'updated_at'> = {
   description: '',
   developer: '',
 };
+
+const RAWG_GAME_GENRE_MAP: Record<string, string> = {
+  Action: 'Ação',
+  RPG: 'RPG',
+  Platformer: 'Plataforma',
+  Shooter: 'Shooter',
+  Strategy: 'Estratégia',
+  Adventure: 'Adventure',
+  Puzzle: 'Puzzle',
+  Racing: 'Corrida',
+  Fighting: 'Luta',
+  Sports: 'Esporte',
+  Simulation: 'Simulação',
+  Indie: 'Ação',
+  Casual: 'Outro',
+  Arcade: 'Ação',
+  'Board Games': 'Mesa',
+  Card: 'Card Game',
+  Educational: 'Outro',
+  Family: 'Outro',
+  'Massively Multiplayer': 'RPG',
+};
+
+const CONSOLE_PRIORITY = [
+  'PS2', 'PS3', 'PS1', 'PS4', 'PS5', 'PSP', 'PS Vita',
+  'Xbox', 'Xbox 360', 'Xbox One', 'Xbox Series',
+  'Switch', 'Wii U', 'Wii',
+  'N64', 'SNES', 'NES', 'GameCube',
+  'Dreamcast', 'Saturn', 'Mega Drive',
+  'Arcade', 'PC', 'Mobile/Java',
+];
+
+function normalizePlatform(value: string): string {
+  return (value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function mapRawgPlatformToConsole(rawPlatform: string): string | null {
+  const p = normalizePlatform(rawPlatform);
+
+  if (p.includes('playstation vita') || p.includes('ps vita') || p === 'vita') return 'PS Vita';
+  if (p.includes('playstation portable') || p === 'psp') return 'PSP';
+  if (p.includes('playstation 5') || p === 'ps5') return 'PS5';
+  if (p.includes('playstation 4') || p === 'ps4') return 'PS4';
+  if (p.includes('playstation 3') || p === 'ps3') return 'PS3';
+  if (p.includes('playstation 2') || p === 'ps2') return 'PS2';
+  if (p.includes('playstation') || p === 'ps1') return 'PS1';
+
+  if (p.includes('xbox series')) return 'Xbox Series';
+  if (p.includes('xbox one')) return 'Xbox One';
+  if (p.includes('xbox 360')) return 'Xbox 360';
+  if (p.includes('xbox')) return 'Xbox';
+
+  if (p.includes('nintendo switch') || p === 'switch') return 'Switch';
+  if (p.includes('wii u')) return 'Wii U';
+  if (p === 'wii') return 'Wii';
+  if (p.includes('gamecube')) return 'GameCube';
+  if (p.includes('nintendo 64') || p === 'n64') return 'N64';
+  if (p.includes('super nintendo') || p === 'snes') return 'SNES';
+  if (p === 'nes') return 'NES';
+  if (p.includes('nintendo 3ds') || p === '3ds') return '3DS';
+  if (p.includes('nintendo ds') || p === 'nds') return 'NDS';
+  if (p.includes('game boy advance') || p === 'gba') return 'GBA';
+  if (p.includes('game boy color') || p === 'gbc' || p === 'game boy') return 'GB/GBC';
+
+  if (p.includes('dreamcast')) return 'Dreamcast';
+  if (p.includes('saturn')) return 'Saturn';
+  if (p.includes('genesis') || p.includes('mega drive')) return 'Mega Drive';
+  if (p.includes('sega cd')) return 'Sega CD';
+  if (p.includes('game gear')) return 'Game Gear';
+
+  if (p.includes('arcade')) return 'Arcade';
+  if (p.includes('android') || p.includes('ios') || p.includes('mobile')) return 'Mobile/Java';
+  if (p.includes('windows') || p.includes('linux') || p.includes('mac') || p === 'pc') return 'PC';
+
+  return null;
+}
+
+function pickBestConsole(rawPlatforms: string[], fallback: string): string {
+  const mapped = (rawPlatforms || [])
+    .map(mapRawgPlatformToConsole)
+    .filter((consoleName): consoleName is string => !!consoleName && CONSOLES.includes(consoleName));
+
+  if (mapped.length === 0) return fallback;
+
+  for (const preferred of CONSOLE_PRIORITY) {
+    if (mapped.includes(preferred)) return preferred;
+  }
+
+  return mapped[0];
+}
 
 type SortField = 'name' | 'completion_date' | 'play_time' | 'rating';
 
@@ -136,7 +231,6 @@ export default function CompletedGamesPage() {
 
   const totalTime = secondsToTimeStr(items.reduce((s, i) => s + parseTimeToSeconds(i.play_time), 0));
   const avgRating = items.length > 0 ? (items.reduce((s, i) => s + i.rating, 0) / items.length).toFixed(1) : '0';
-  const availableTypes = GAME_TYPES[formData.genre] || [];
   const usedGenres = [...new Set(items.map(i => i.genre))].sort();
   const usedConsoles = [...new Set(items.map(i => i.console))].sort();
 
@@ -178,7 +272,6 @@ export default function CompletedGamesPage() {
               <SortHeader label="Jogo" field="name" current={sortField} asc={sortAsc} onSort={toggleSort} />
               <th className="px-3 py-3 text-left text-dark-300 font-medium">Console</th>
               <th className="px-3 py-3 text-left text-dark-300 font-medium">Gênero</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Tipo</th>
               <SortHeader label="Data" field="completion_date" current={sortField} asc={sortAsc} onSort={toggleSort} />
               <SortHeader label="Tempo" field="play_time" current={sortField} asc={sortAsc} onSort={toggleSort} />
               <SortHeader label="Nota" field="rating" current={sortField} asc={sortAsc} onSort={toggleSort} />
@@ -204,7 +297,6 @@ export default function CompletedGamesPage() {
                 </td>
                 <td className="px-3 py-2.5 text-dark-300">{item.console}</td>
                 <td className="px-3 py-2.5 text-dark-300">{item.genre}</td>
-                <td className="px-3 py-2.5 text-dark-400 text-xs">{item.type}</td>
                 <td className="px-3 py-2.5 text-dark-300 font-mono text-xs">{formatDateBR(item.completion_date)}</td>
                 <td className="px-3 py-2.5 text-dark-300 font-mono text-xs">{item.play_time}</td>
                 <td className="px-3 py-2.5">
@@ -229,7 +321,7 @@ export default function CompletedGamesPage() {
               </tr>
             ))}
             {sorted.length === 0 && (
-              <tr><td colSpan={10} className="px-4 py-12 text-center text-dark-400">Nenhum jogo encontrado</td></tr>
+              <tr><td colSpan={9} className="px-4 py-12 text-center text-dark-400">Nenhum jogo encontrado</td></tr>
             )}
           </tbody>
         </table>
@@ -257,25 +349,24 @@ export default function CompletedGamesPage() {
                 // Fetch full details
                 const details = await window.api.search.gameDetails(result.id as number);
                 if (details) {
-                  // Try to match genre
-                  const GAME_GENRE_MAP: Record<string, string> = {
-                    'Action': 'Ação', 'RPG': 'RPG', 'Platformer': 'Plataforma', 'Shooter': 'Shooter',
-                    'Strategy': 'Estratégia', 'Adventure': 'Adventure', 'Puzzle': 'Puzzle',
-                    'Racing': 'Corrida', 'Fighting': 'Luta', 'Sports': 'Esporte', 'Simulation': 'Simulação',
-                    'Indie': 'Ação', 'Casual': 'Outro', 'Arcade': 'Ação', 'Board Games': 'Mesa',
-                    'Card': 'Card Game', 'Educational': 'Outro', 'Family': 'Outro', 'Massively Multiplayer': 'RPG',
-                  };
-                  const matchedGenre = details.genres
-                    .map((g: string) => GAME_GENRE_MAP[g])
-                    .find((g: string | undefined) => g && GAME_GENRES.includes(g)) || formData.genre;
-
                   setFormData(f => ({
                     ...f,
-                    name: details.name,
-                    cover_url: details.cover_url,
-                    description: details.description,
-                    developer: details.developer,
-                    genre: matchedGenre,
+                    ...(() => {
+                      const matchedGenre = details.genres
+                        .map((g: string) => RAWG_GAME_GENRE_MAP[g])
+                        .find((g: string | undefined) => g && GAME_GENRES.includes(g)) || f.genre;
+
+                      const matchedConsole = pickBestConsole(details.platforms || [], f.console);
+
+                      return {
+                        name: details.name,
+                        cover_url: details.cover_url,
+                        description: details.description,
+                        developer: details.developer,
+                        genre: matchedGenre,
+                        console: matchedConsole,
+                      };
+                    })(),
                   }));
                 }
               }}
@@ -313,15 +404,8 @@ export default function CompletedGamesPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">Gênero</label>
-            <select value={formData.genre} onChange={e => setFormData(f => ({ ...f, genre: e.target.value, type: '' }))} className="select-field">
+            <select value={formData.genre} onChange={e => setFormData(f => ({ ...f, genre: e.target.value }))} className="select-field">
               {GAME_GENRES.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-dark-300 mb-1">Tipo</label>
-            <select value={formData.type} onChange={e => setFormData(f => ({ ...f, type: e.target.value }))} className="select-field">
-              <option value="">Selecionar...</option>
-              {availableTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
           <div>

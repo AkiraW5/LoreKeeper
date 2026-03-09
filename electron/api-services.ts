@@ -9,6 +9,7 @@ export interface GameSearchResult {
   released: string;
   genres: string[];
   platforms: string[];
+  playtime: number;
 }
 
 export interface GameDetailsResult {
@@ -19,6 +20,7 @@ export interface GameDetailsResult {
   genres: string[];
   platforms: string[];
   released: string;
+  playtime: number;
 }
 
 export interface MovieSearchResult {
@@ -84,6 +86,7 @@ export async function searchGames(query: string, apiKey: string): Promise<GameSe
       released: g.released || '',
       genres: (g.genres || []).map((x: any) => x.name),
       platforms: (g.platforms || []).map((p: any) => p.platform.name),
+      playtime: Math.max(0, Math.round(g.playtime || 0)),
     }));
   } catch {
     return [];
@@ -105,6 +108,7 @@ export async function getGameDetails(rawgId: number, apiKey: string): Promise<Ga
       genres: (g.genres || []).map((x: any) => x.name),
       platforms: (g.platforms || []).map((p: any) => p.platform.name),
       released: g.released || '',
+      playtime: Math.max(0, Math.round(g.playtime || 0)),
     };
   } catch {
     return null;

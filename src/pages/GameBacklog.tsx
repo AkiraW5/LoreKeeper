@@ -33,6 +33,14 @@ const desireLabels: Record<number, string> = {
   1: '😐', 2: '🙂', 3: '😊', 4: '🤩', 5: '🔥',
 };
 
+const desireCardClasses: Record<number, string> = {
+  1: 'opacity-70 border-dark-700/40 saturate-50',
+  2: 'opacity-80 border-dark-700/50',
+  3: 'opacity-90 border-dark-700/60',
+  4: 'opacity-100 border-accent-500/25 shadow-md shadow-accent-500/5',
+  5: 'opacity-100 border-accent-500/45 shadow-lg shadow-accent-500/15 ring-1 ring-accent-500/30',
+};
+
 export default function GameBacklogPage() {
   const [items, setItems] = useState<GameBacklog[]>([]);
   const [search, setSearch] = useState('');
@@ -149,6 +157,16 @@ export default function GameBacklogPage() {
     return matchSearch && matchPlaying;
   });
 
+  const queueCandidates = filtered.filter(i => !i.currently_playing);
+  const nextToPlay = [...queueCandidates]
+    .sort((a, b) => {
+      if (b.desire_level !== a.desire_level) return b.desire_level - a.desire_level;
+      if (a.owned !== b.owned) return (b.owned ? 1 : 0) - (a.owned ? 1 : 0);
+      if (a.expected_hours !== b.expected_hours) return a.expected_hours - b.expected_hours;
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 5);
+
   const totalHours = filtered.reduce((sum, i) => sum + i.expected_hours, 0);
 
   return (
@@ -194,13 +212,51 @@ export default function GameBacklogPage() {
 
       {/* Grid */}
       <div className="flex-1 overflow-auto">
+        {nextToPlay.length > 0 && (
+          <section className="mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-semibold text-dark-200 uppercase tracking-wider">Próximo a Jogar</h2>
+              <p className="text-xs text-dark-400">Top {nextToPlay.length} da fila</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {nextToPlay.map((item, idx) => (
+                <article
+                  key={`next-${item.id}`}
+                  className={`group rounded-xl overflow-hidden border bg-dark-800/60 ${idx === 0 ? 'xl:col-span-2 border-accent-500/40' : 'border-dark-700/60'}`}
+                >
+                  <div className="p-3 flex items-start gap-3">
+                    <div className={`shrink-0 rounded-md overflow-hidden bg-dark-700 ${idx === 0 ? 'w-20 h-28' : 'w-14 h-20'}`}>
+                      {item.cover_url ? (
+                        <img src={item.cover_url} alt={item.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-dark-500">Sem capa</div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent-500/20 border border-accent-500/40 text-accent-300">#{idx + 1}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-dark-950/80 border border-dark-500/60 text-yellow-300">
+                          {desireLabels[item.desire_level]} {item.desire_level}/5
+                        </span>
+                      </div>
+                      <h3 className={`font-semibold text-dark-100 line-clamp-1 ${idx === 0 ? 'text-base' : 'text-sm'}`} title={item.name}>{item.name}</h3>
+                      <p className="text-xs text-dark-400 mt-1 line-clamp-1">{item.genre} • {item.platform}</p>
+                      <p className="text-xs text-dark-500 mt-1">~{item.expected_hours}h {item.owned ? '• Já tenho' : '• Não tenho ainda'}</p>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map(item => (
-            <div
+            <article
               key={item.id}
-              className={`stat-card relative group ${
+              className={`relative group rounded-xl border bg-dark-800/55 p-4 transition-all duration-200 hover:-translate-y-0.5 ${
                 item.currently_playing ? 'border-green-500/30 bg-green-500/5' : ''
-              }`}
+              } ${desireCardClasses[item.desire_level]}`}
             >
               {!!item.currently_playing && (
                 <div className="absolute top-3 right-3">
@@ -212,11 +268,17 @@ export default function GameBacklogPage() {
 
               <div className="flex items-start gap-3">
                 {item.cover_url ? (
-                  <img src={item.cover_url} alt="" className="w-12 h-16 object-cover rounded shrink-0 bg-dark-700" />
+                  <img src={item.cover_url} alt={item.name} className="w-14 h-20 object-cover rounded shrink-0 bg-dark-700" />
                 ) : null}
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-dark-100 pr-20">{item.name}</h3>
                   <p className="text-xs text-dark-400 mt-1">{item.genre} • {item.platform}</p>
+                  <div className="mt-2 w-full h-1.5 bg-dark-700/70 rounded-full overflow-hidden" title={`Prioridade ${item.desire_level}/5`}>
+                    <div
+                      className={`h-full rounded-full ${item.desire_level >= 4 ? 'bg-accent-500' : item.desire_level === 3 ? 'bg-blue-400' : 'bg-dark-500'}`}
+                      style={{ width: `${(item.desire_level / 5) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -254,7 +316,7 @@ export default function GameBacklogPage() {
                   <Trash2 size={13} className="text-dark-400 hover:text-red-400" />
                 </button>
               </div>
-            </div>
+            </article>
           ))}
         </div>
 
@@ -281,7 +343,7 @@ export default function GameBacklogPage() {
                 return results.map((r: any) => ({
                   id: r.rawg_id,
                   title: r.name,
-                  subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
+                  subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}${r.playtime ? ` • ~${r.playtime}h` : ''}`,
                   cover_url: r.cover_url,
                 }));
               }}
@@ -298,6 +360,7 @@ export default function GameBacklogPage() {
                     cover_url: details.cover_url,
                     description: details.description,
                     genre: matchedGenre,
+                    expected_hours: details.playtime && details.playtime > 0 ? details.playtime : f.expected_hours,
                   }));
                 }
               }}

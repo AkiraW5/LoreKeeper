@@ -5,14 +5,15 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
 import { Movie, MEDIA_GENRES, RATING_LABELS } from '../types';
-import { generateId, formatDateBR, getRatingColor } from '../lib/utils';
+import { generateId, formatDateBR, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultMovie: Omit<Movie, 'id' | 'created_at' | 'updated_at'> = {
   title: '',
   genre: 'Ação',
   director: '',
   year: new Date().getFullYear(),
-  watch_date: new Date().toISOString().split('T')[0],
+  status: 'Planejado',
+  watch_date: '',
   duration_min: 120,
   rating: 7,
   platform: '',
@@ -20,6 +21,8 @@ const defaultMovie: Omit<Movie, 'id' | 'created_at' | 'updated_at'> = {
   cover_url: '',
   overview: '',
 };
+
+const STATUS_LIST = ['Assistindo', 'Concluído', 'Dropado', 'Pausado', 'Planejado'] as const;
 
 const MOVIE_GENRE_MAP: Record<string, string> = {
   'Ação': 'Ação', 'Aventura': 'Aventura', 'Animação': 'Animação', 'Comédia': 'Comédia',
@@ -37,6 +40,7 @@ const MOVIE_GENRE_MAP: Record<string, string> = {
 export default function MoviesPage() {
   const [items, setItems] = useState<Movie[]>([]);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Movie | null>(null);
   const [formData, setFormData] = useState(defaultMovie);
@@ -45,7 +49,7 @@ export default function MoviesPage() {
   useEffect(() => { loadItems(); }, []);
 
   async function loadItems() {
-    setItems(await window.api.db.getAll('movies', 'watch_date DESC'));
+    setItems(await window.api.db.getAll('movies', 'updated_at DESC'));
   }
 
   function openAdd() { setEditing(null); setFormData({ ...defaultMovie }); setModalOpen(true); }
@@ -54,6 +58,7 @@ export default function MoviesPage() {
     setEditing(item);
     setFormData({
       title: item.title, genre: item.genre, director: item.director, year: item.year,
+      status: item.status || 'Concluído',
       watch_date: item.watch_date, duration_min: item.duration_min, rating: item.rating,
       platform: item.platform, notes: item.notes,
       cover_url: item.cover_url || '', overview: item.overview || '',
@@ -80,7 +85,11 @@ export default function MoviesPage() {
     loadItems();
   }
 
-  const filtered = items.filter(i => i.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = items.filter(i => {
+    const matchSearch = i.title.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = !filterStatus || i.status === filterStatus;
+    return matchSearch && matchStatus;
+  });
 
   return (
     <div className="p-6 flex flex-col h-full">
@@ -90,69 +99,61 @@ export default function MoviesPage() {
             <Film size={24} className="text-purple-400" />
             Filmes
           </h1>
-          <p className="text-sm text-dark-400 mt-1">{items.length} filmes assistidos</p>
+          <p className="text-sm text-dark-400 mt-1">{items.length} filmes rastreados</p>
         </div>
         <button onClick={openAdd} className="btn-primary flex items-center gap-2">
           <Plus size={16} /> Adicionar Filme
         </button>
       </div>
 
-      <div className="w-72 mb-4">
-        <SearchBar value={search} onChange={setSearch} placeholder="Buscar filme..." />
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-72">
+          <SearchBar value={search} onChange={setSearch} placeholder="Buscar filme..." />
+        </div>
+        <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} className="select-field w-36 text-sm py-2">
+          <option value="">Status</option>
+          {STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-xl border border-dark-700/50">
-        <table className="w-full text-sm">
-          <thead className="bg-dark-800/80 sticky top-0">
-            <tr>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Título</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Gênero</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Diretor</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Ano</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Assistido</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Duração</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Nota</th>
-              <th className="px-3 py-3 text-center text-dark-300 font-medium w-16">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map(item => (
-              <tr key={item.id} className="table-row">
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    {item.cover_url ? (
-                      <img src={item.cover_url} alt="" className="w-8 h-11 object-cover rounded shrink-0 bg-dark-700" />
-                    ) : null}
-                    <span className="font-medium text-dark-100">{item.title}</span>
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-dark-300">{item.genre}</td>
-                <td className="px-3 py-2.5 text-dark-400">{item.director}</td>
-                <td className="px-3 py-2.5 text-dark-300">{item.year}</td>
-                <td className="px-3 py-2.5 text-dark-300 font-mono text-xs">{formatDateBR(item.watch_date)}</td>
-                <td className="px-3 py-2.5 text-dark-300">{item.duration_min}min</td>
-                <td className="px-3 py-2.5">
-                  <span className={`font-bold ${getRatingColor(item.rating)}`} title={RATING_LABELS[item.rating]}>
-                    {item.rating}
-                  </span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-600">
-                      <Edit3 size={14} className="text-dark-400 hover:text-accent-400" />
-                    </button>
-                    <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-600">
-                      <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-12 text-center text-dark-400">Nenhum filme encontrado</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {filtered.map(item => (
+            <article key={item.id} className="group bg-dark-800/50 border border-dark-700/50 rounded-xl overflow-hidden hover:border-accent-500/40 transition-all duration-200">
+              <div className="aspect-[2/3] bg-dark-700 overflow-hidden relative">
+                {item.cover_url ? (
+                  <img src={item.cover_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-dark-500 text-xs">Sem capa</div>
+                )}
+                <span className={`badge border text-[10px] absolute top-2 left-2 ${getStatusColor(item.status)} bg-dark-950/85 border-dark-500/70 shadow-md backdrop-blur-sm`}>{item.status}</span>
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-dark-950/90 border border-dark-500/60 shadow-md text-xs font-bold">
+                  <span className={getRatingColor(item.rating)}>{item.rating}</span>
+                </div>
+              </div>
+              <div className="p-3">
+                <h3 className="font-semibold text-dark-100 line-clamp-1" title={item.title}>{item.title}</h3>
+                <p className="text-xs text-dark-400 mt-1 line-clamp-1">{item.genre} {item.year ? `• ${item.year}` : ''}</p>
+                <p className="text-xs text-dark-500 mt-1 line-clamp-1">{item.director || 'Diretor não informado'}</p>
+                <div className="mt-2 text-[11px] text-dark-400 flex items-center justify-between">
+                  <span className="font-mono">{item.watch_date ? formatDateBR(item.watch_date) : 'Sem data'}</span>
+                  <span>{item.duration_min}min</span>
+                </div>
+                <div className="mt-2 flex items-center justify-end gap-1">
+                  <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-700" title="Editar">
+                    <Edit3 size={14} className="text-dark-400 hover:text-accent-400" />
+                  </button>
+                  <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-700" title="Excluir">
+                    <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        {filtered.length === 0 && (
+          <div className="text-center text-dark-400 py-12">Nenhum filme encontrado</div>
+        )}
       </div>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Filme' : 'Adicionar Filme'}>
@@ -218,7 +219,13 @@ export default function MoviesPage() {
             <input type="number" value={formData.year} onChange={e => setFormData(f => ({ ...f, year: parseInt(e.target.value) || 2024 }))} className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-dark-300 mb-1">Data que Assistiu</label>
+            <label className="block text-xs font-medium text-dark-300 mb-1">Status</label>
+            <select value={formData.status} onChange={e => setFormData(f => ({ ...f, status: e.target.value as Movie['status'] }))} className="select-field">
+              {STATUS_LIST.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-dark-300 mb-1">{formData.status === 'Concluído' ? 'Data que Assistiu' : 'Data (opcional)'}</label>
             <input type="date" value={formData.watch_date} onChange={e => setFormData(f => ({ ...f, watch_date: e.target.value }))} className="input-field" />
           </div>
           <div>

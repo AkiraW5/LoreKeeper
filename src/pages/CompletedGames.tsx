@@ -205,11 +205,6 @@ export default function CompletedGamesPage() {
     loadItems();
   }
 
-  function toggleSort(field: SortField) {
-    if (sortField === field) setSortAsc(!sortAsc);
-    else { setSortField(field); setSortAsc(false); }
-  }
-
   const sorted = useMemo(() => {
     let list = [...items];
     if (search) list = list.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
@@ -263,68 +258,65 @@ export default function CompletedGamesPage() {
           <option value="">Plataforma</option>
           {usedConsoles.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
+        <select
+          value={sortField}
+          onChange={e => setSortField(e.target.value as SortField)}
+          className="select-field w-36 text-sm py-2"
+        >
+          <option value="completion_date">Ordenar: Data</option>
+          <option value="name">Ordenar: Nome</option>
+          <option value="play_time">Ordenar: Tempo</option>
+          <option value="rating">Ordenar: Nota</option>
+        </select>
+        <button onClick={() => setSortAsc(v => !v)} className="btn-secondary text-sm py-2 px-3 flex items-center gap-2">
+          <ArrowUpDown size={14} /> {sortAsc ? 'Crescente' : 'Decrescente'}
+        </button>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-xl border border-dark-700/50">
-        <table className="w-full text-sm">
-          <thead className="bg-dark-800/80 sticky top-0 z-10">
-            <tr>
-              <SortHeader label="Jogo" field="name" current={sortField} asc={sortAsc} onSort={toggleSort} />
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Console</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Gênero</th>
-              <SortHeader label="Data" field="completion_date" current={sortField} asc={sortAsc} onSort={toggleSort} />
-              <SortHeader label="Tempo" field="play_time" current={sortField} asc={sortAsc} onSort={toggleSort} />
-              <SortHeader label="Nota" field="rating" current={sortField} asc={sortAsc} onSort={toggleSort} />
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Dif.</th>
-              <th className="px-3 py-3 text-left text-dark-300 font-medium">Condição</th>
-              <th className="px-3 py-3 text-center text-dark-300 font-medium w-16">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map(item => (
-              <tr key={item.id} className="table-row">
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2">
-                    {item.cover_url ? (
-                      <img src={item.cover_url} alt="" className="w-8 h-11 object-cover rounded shrink-0 bg-dark-700" />
-                    ) : null}
-                    <span className="font-medium text-dark-100">{item.name}</span>
-                    {!!item.is_gold && <span className="text-yellow-400 text-[10px]" title="100% / Platina">🏆</span>}
-                    {!!(item as any).mission_complete && !!(item as any).mission_id && (
-                      <span className="text-green-400 text-[10px]" title="Missão Completa">🎯</span>
-                    )}
-                  </div>
-                </td>
-                <td className="px-3 py-2.5 text-dark-300">{item.console}</td>
-                <td className="px-3 py-2.5 text-dark-300">{item.genre}</td>
-                <td className="px-3 py-2.5 text-dark-300 font-mono text-xs">{formatDateBR(item.completion_date)}</td>
-                <td className="px-3 py-2.5 text-dark-300 font-mono text-xs">{item.play_time}</td>
-                <td className="px-3 py-2.5">
-                  <span className={`font-bold ${getRatingColor(item.rating)}`} title={RATING_LABELS[item.rating]}>{item.rating}</span>
-                </td>
-                <td className="px-3 py-2.5">
-                  <span className={`font-bold text-xs ${getDifficultyColor(item.difficulty)}`}>{item.difficulty}</span>
-                </td>
-                <td className="px-3 py-2.5 text-dark-400 text-xs max-w-[150px] truncate" title={item.completion_condition}>
-                  {item.completion_condition}
-                </td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center justify-center gap-1">
-                    <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-600">
-                      <Edit3 size={14} className="text-dark-400 hover:text-accent-400" />
-                    </button>
-                    <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-600">
-                      <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {sorted.length === 0 && (
-              <tr><td colSpan={9} className="px-4 py-12 text-center text-dark-400">Nenhum jogo encontrado</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {sorted.map(item => (
+            <article key={item.id} className="group bg-dark-800/50 border border-dark-700/50 rounded-xl overflow-hidden hover:border-accent-500/40 transition-all duration-200">
+              <div className="aspect-[2/3] bg-dark-700 overflow-hidden relative">
+                {item.cover_url ? (
+                  <img src={item.cover_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-dark-500 text-xs">Sem capa</div>
+                )}
+                <div className="absolute top-2 left-2 flex gap-1">
+                  {!!item.is_gold && <span className="text-[10px] px-1.5 py-0.5 rounded bg-dark-950/90 border border-dark-500/60 shadow-md text-yellow-400">🏆</span>}
+                  {!!(item as any).mission_complete && !!(item as any).mission_id && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-dark-950/90 border border-dark-500/60 shadow-md text-green-400">🎯</span>
+                  )}
+                </div>
+                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-dark-950/90 border border-dark-500/60 shadow-md text-xs font-bold">
+                  <span className={getRatingColor(item.rating)}>{item.rating}</span>
+                </div>
+              </div>
+              <div className="p-3">
+                <h3 className="font-semibold text-dark-100 line-clamp-1" title={item.name}>{item.name}</h3>
+                <p className="text-xs text-dark-400 mt-1 line-clamp-1">{item.console} • {item.genre}</p>
+                <p className="text-xs text-dark-500 mt-1 line-clamp-1" title={item.completion_condition}>{item.completion_condition}</p>
+                <div className="mt-2 text-[11px] text-dark-400 flex items-center justify-between">
+                  <span className="font-mono">{formatDateBR(item.completion_date)}</span>
+                  <span className="font-mono">{item.play_time}</span>
+                </div>
+                <div className="mt-1 text-[11px] text-dark-400">Dificuldade: <span className={getDifficultyColor(item.difficulty)}>{item.difficulty}</span></div>
+                <div className="mt-2 flex items-center justify-end gap-1">
+                  <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-700" title="Editar">
+                    <Edit3 size={14} className="text-dark-400 hover:text-accent-400" />
+                  </button>
+                  <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-700" title="Excluir">
+                    <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
+                  </button>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        {sorted.length === 0 && (
+          <div className="text-center text-dark-400 py-12">Nenhum jogo encontrado</div>
+        )}
       </div>
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Editar Jogo' : 'Novo Jogo Zerado'} width="max-w-3xl">
@@ -458,18 +450,5 @@ export default function CompletedGamesPage() {
 
       <ConfirmDialog isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={deleteItem} title="Excluir Jogo" message={`Excluir "${deleteTarget?.name}"?`} />
     </div>
-  );
-}
-
-function SortHeader({ label, field, current, asc, onSort }: {
-  label: string; field: SortField; current: SortField; asc: boolean; onSort: (f: SortField) => void;
-}) {
-  return (
-    <th className="px-3 py-3 text-left text-dark-300 font-medium cursor-pointer hover:text-dark-100 select-none" onClick={() => onSort(field)}>
-      <div className="flex items-center gap-1">
-        {label}
-        <ArrowUpDown size={12} className={current === field ? 'text-accent-400' : 'text-dark-500'} />
-      </div>
-    </th>
   );
 }

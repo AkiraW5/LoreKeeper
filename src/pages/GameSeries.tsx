@@ -269,136 +269,148 @@ export default function GameSeriesPage() {
         <SearchBar value={search} onChange={setSearch} placeholder="Buscar série..." />
       </div>
 
-      {/* Series List */}
-      <div className="flex-1 overflow-auto space-y-3">
-        {filtered.map((series: any) => {
-          const isExpanded = expandedSeries.has(series.id);
-          const pct = series.totalCount > 0
-            ? Math.round((series.completedCount / series.totalCount) * 100)
-            : 0;
+      {/* Series Grid */}
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {filtered.map((series: any) => {
+            const isExpanded = expandedSeries.has(series.id);
+            const pct = series.totalCount > 0
+              ? Math.round((series.completedCount / series.totalCount) * 100)
+              : 0;
 
-          return (
-            <div key={series.id} className="stat-card">
-              {/* Series Header */}
-              <div
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => toggleExpand(series.id)}
-              >
-                <div className="flex items-center gap-3">
-                  {isExpanded ? (
-                    <ChevronDown size={18} className="text-dark-400" />
-                  ) : (
-                    <ChevronRight size={18} className="text-dark-400" />
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-dark-100">{series.name}</h3>
-                    <p className="text-xs text-dark-400 mt-0.5">
-                      Zerado: {series.completedCount} / {series.totalCount} — {pct}%
-                      {series.mainCount > 0 && (
-                        <span className="ml-2">
-                          • Principal: {series.mainCompleted}/{series.mainCount}
-                        </span>
+            const entries = series.entries || [];
+            const byRecentCompleted = [...entries]
+              .filter((e: any) => e.is_completed && (e.cover_url || e.linked_game?.cover_url))
+              .sort((a: any, b: any) => (b.completion_date || '').localeCompare(a.completion_date || ''));
+            const mainWithCover = entries.find((e: any) => e.is_main && (e.cover_url || e.linked_game?.cover_url));
+            const firstWithCover = entries.find((e: any) => e.cover_url || e.linked_game?.cover_url);
+            const coverEntry = byRecentCompleted[0] || mainWithCover || firstWithCover;
+            const seriesCover = coverEntry ? ((coverEntry as any).cover_url || coverEntry.linked_game?.cover_url || '') : '';
+
+            const mainEntries = entries.filter((e: any) => e.is_main);
+            const spinoffEntries = entries.filter((e: any) => !e.is_main);
+
+            return (
+              <article key={series.id} className="bg-dark-800/50 border border-dark-700/50 rounded-2xl overflow-hidden">
+                <div className="p-4">
+                  <div className="flex gap-4">
+                    <button
+                      className="w-20 h-28 shrink-0 rounded-lg bg-dark-700 overflow-hidden border border-dark-600/70"
+                      onClick={() => toggleExpand(series.id)}
+                      title={isExpanded ? 'Recolher série' : 'Expandir série'}
+                    >
+                      {seriesCover ? (
+                        <img src={seriesCover} alt={series.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[10px] text-dark-500">Sem capa</div>
                       )}
-                      {series.spinoffCount > 0 && (
-                        <span className="ml-2">
-                          • Spin-off: {series.spinoffCompleted}/{series.spinoffCount}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </div>
+                    </button>
 
-                <div className="flex items-center gap-3">
-                  {/* Progress bar */}
-                  <div className="w-32 h-2 bg-dark-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-accent-500 rounded-full transition-all duration-300"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <span className="text-xs font-mono text-dark-300 w-10 text-right">{pct}%</span>
-
-                  <button
-                    onClick={e => { e.stopPropagation(); autoLinkAll(series.id); }}
-                    className="p-1.5 rounded hover:bg-dark-600 transition-colors"
-                    title="Auto-vincular com jogos zerados"
-                  >
-                    <Link2 size={14} className="text-dark-400 hover:text-green-400" />
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setAddEntryModal(series.id); }}
-                    className="p-1.5 rounded hover:bg-dark-600 transition-colors"
-                    title="Adicionar jogo"
-                  >
-                    <Plus size={14} className="text-dark-400 hover:text-accent-400" />
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setDeleteTarget({ type: 'series', id: series.id, name: series.name }); }}
-                    className="p-1.5 rounded hover:bg-dark-600 transition-colors"
-                    title="Excluir série"
-                  >
-                    <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Entries */}
-              {isExpanded && series.entries && (
-                <div className="mt-4 ml-7 space-y-1">
-                  {series.entries.length > 0 && (
-                    <>
-                      {/* Main entries */}
-                      {series.entries.filter((e: any) => e.is_main).length > 0 && (
-                        <div className="mb-2">
-                          <p className="text-[10px] uppercase tracking-wider text-dark-400 font-semibold mb-1">
-                            Série Principal
-                          </p>
-                          {series.entries.filter((e: any) => e.is_main).map((entry: any) => (
-                            <EntryRow
-                              key={entry.id}
-                              entry={entry}
-                              onToggle={toggleEntryCompletion}
-                              onEdit={openEditEntry}
-                              onLink={openLinkModal}
-                              onUnlink={unlinkGame}
-                              onDelete={(e) => setDeleteTarget({ type: 'entry', id: e.id, name: e.name })}
-                            />
-                          ))}
+                    <div className="flex-1 min-w-0">
+                      <button className="w-full text-left" onClick={() => toggleExpand(series.id)}>
+                        <div className="flex items-center gap-2">
+                          {isExpanded ? <ChevronDown size={17} className="text-dark-400" /> : <ChevronRight size={17} className="text-dark-400" />}
+                          <h3 className="font-semibold text-dark-100 truncate">{series.name}</h3>
                         </div>
-                      )}
-                      {/* Spinoffs */}
-                      {series.entries.filter((e: any) => !e.is_main).length > 0 && (
+                      </button>
+
+                      <p className="text-xs text-dark-400 mt-2">
+                        Zerado: {series.completedCount} / {series.totalCount} — {pct}%
+                        {series.mainCount > 0 && <span className="ml-2">• Principal: {series.mainCompleted}/{series.mainCount}</span>}
+                        {series.spinoffCount > 0 && <span className="ml-2">• Spin-off: {series.spinoffCompleted}/{series.spinoffCount}</span>}
+                      </p>
+
+                      <div className="mt-2 flex items-center gap-3">
+                        <div className="flex-1 h-2 bg-dark-700 rounded-full overflow-hidden">
+                          <div className="h-full bg-accent-500 rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs font-mono text-dark-300 w-10 text-right">{pct}%</span>
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-1">
+                        <button
+                          onClick={e => { e.stopPropagation(); autoLinkAll(series.id); }}
+                          className="p-1.5 rounded hover:bg-dark-700 transition-colors"
+                          title="Auto-vincular com jogos zerados"
+                        >
+                          <Link2 size={14} className="text-dark-400 hover:text-green-400" />
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setAddEntryModal(series.id); }}
+                          className="p-1.5 rounded hover:bg-dark-700 transition-colors"
+                          title="Adicionar jogo"
+                        >
+                          <Plus size={14} className="text-dark-400 hover:text-accent-400" />
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDeleteTarget({ type: 'series', id: series.id, name: series.name }); }}
+                          className="p-1.5 rounded hover:bg-dark-700 transition-colors"
+                          title="Excluir série"
+                        >
+                          <Trash2 size={14} className="text-dark-400 hover:text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {isExpanded && (
+                    <div className="mt-4 space-y-3">
+                      {mainEntries.length > 0 && (
                         <div>
-                          <p className="text-[10px] uppercase tracking-wider text-dark-400 font-semibold mb-1">
-                            Spin-offs
-                          </p>
-                          {series.entries.filter((e: any) => !e.is_main).map((entry: any) => (
-                            <EntryRow
-                              key={entry.id}
-                              entry={entry}
-                              onToggle={toggleEntryCompletion}
-                              onEdit={openEditEntry}
-                              onLink={openLinkModal}
-                              onUnlink={unlinkGame}
-                              onDelete={(e) => setDeleteTarget({ type: 'entry', id: e.id, name: e.name })}
-                            />
-                          ))}
+                          <p className="text-[10px] uppercase tracking-wider text-dark-400 font-semibold mb-2">Série Principal</p>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                            {mainEntries.map((entry: any, idx: number) => (
+                              <React.Fragment key={entry.id}>
+                                <EntryRow
+                                  entry={entry}
+                                  onToggle={toggleEntryCompletion}
+                                  onEdit={openEditEntry}
+                                  onLink={openLinkModal}
+                                  onUnlink={unlinkGame}
+                                  onDelete={(e) => setDeleteTarget({ type: 'entry', id: e.id, name: e.name })}
+                                />
+                                {idx < mainEntries.length - 1 && <ChevronRight size={14} className="text-dark-500 shrink-0" />}
+                              </React.Fragment>
+                            ))}
+                          </div>
                         </div>
                       )}
-                    </>
-                  )}
-                  {series.entries.length === 0 && (
-                    <p className="text-xs text-dark-500 py-2">Nenhum jogo nessa série</p>
+
+                      {spinoffEntries.length > 0 && (
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-dark-400 font-semibold mb-2">Spin-offs</p>
+                          <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                            {spinoffEntries.map((entry: any, idx: number) => (
+                              <React.Fragment key={entry.id}>
+                                <EntryRow
+                                  entry={entry}
+                                  onToggle={toggleEntryCompletion}
+                                  onEdit={openEditEntry}
+                                  onLink={openLinkModal}
+                                  onUnlink={unlinkGame}
+                                  onDelete={(e) => setDeleteTarget({ type: 'entry', id: e.id, name: e.name })}
+                                />
+                                {idx < spinoffEntries.length - 1 && <ChevronRight size={14} className="text-dark-500 shrink-0" />}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {entries.length === 0 && (
+                        <p className="text-xs text-dark-500 py-2">Nenhum jogo nessa série</p>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              </article>
+            );
+          })}
 
         {filtered.length === 0 && (
           <div className="text-center text-dark-400 py-12">Nenhuma série encontrada</div>
         )}
+      </div>
       </div>
 
       {/* Add Series Modal */}
@@ -599,58 +611,49 @@ function EntryRow({
   const previewCover = (entry as any).cover_url || (entry as any).linked_game?.cover_url || '';
 
   return (
-    <div className="flex items-center justify-between py-2 px-2 rounded hover:bg-dark-700/30 group">
-      <div className="flex items-center gap-3">
+    <div className="group w-40 shrink-0 bg-dark-900/60 border border-dark-700/60 rounded-xl overflow-hidden">
+      <div className="relative h-24 bg-dark-800">
+        {previewCover ? (
+          <img src={previewCover} alt={entry.name} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[10px] text-dark-500">Sem capa</div>
+        )}
         <button
           onClick={() => onToggle(entry)}
-          className={`w-6 h-6 rounded border flex items-center justify-center transition-colors ${
+          className={`absolute top-1.5 left-1.5 w-5 h-5 rounded border flex items-center justify-center transition-colors ${
             entry.is_completed
-              ? 'bg-green-500/20 border-green-500 text-green-400'
-              : 'border-dark-500 hover:border-dark-300'
+              ? 'bg-green-500/25 border-green-500 text-green-300'
+              : 'bg-dark-950/85 border-dark-500 text-dark-300 hover:border-dark-300'
           }`}
+          title={entry.is_completed ? 'Marcar como não concluído' : 'Marcar como concluído'}
         >
-          {!!entry.is_completed && <Check size={12} />}
+          {!!entry.is_completed && <Check size={11} />}
         </button>
-        {previewCover ? (
-          <img src={previewCover} alt="" className="w-10 h-14 object-cover rounded shadow-sm bg-dark-700" />
-        ) : (
-          <div className="w-10 h-14 bg-dark-800 rounded flex items-center justify-center text-[10px] text-dark-500">No Img</div>
-        )}
-        <div>
-          <div className={`text-sm ${entry.is_completed ? 'text-dark-300 line-through' : 'text-dark-100'}`}>{entry.name}</div>
-          {entry.linked_game && <div className="text-xs text-dark-400">Vinculado: {entry.linked_game.name}</div>}
-        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {entry.completion_date ? (
-          <span className="text-[10px] text-dark-500 font-mono">{formatDateBR(entry.completion_date)}</span>
-        ) : (
-          <span className="text-[10px] text-dark-500 font-mono">—</span>
-        )}
-        <button
-          onClick={() => onEdit(entry)}
-          className="p-1 rounded hover:bg-dark-600 opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Editar data"
-        >
-          <Edit3 size={12} className="text-dark-400 hover:text-accent-400" />
-        </button>
-        <button
-          onClick={() => entry.linked_game ? onUnlink(entry) : onLink(entry)}
-          className="p-1 rounded hover:bg-dark-600 opacity-0 group-hover:opacity-100 transition-opacity"
-          title={entry.linked_game ? 'Desvincular' : 'Vincular com jogo zerado'}
-        >
-          {entry.linked_game ? (
-            <Unlink size={12} className="text-accent-400 hover:text-red-400" />
-          ) : (
-            <Link2 size={12} className="text-dark-400 hover:text-green-400" />
-          )}
-        </button>
-        <button
-          onClick={() => onDelete(entry)}
-          className="p-1 rounded hover:bg-dark-600 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <Trash2 size={12} className="text-dark-400 hover:text-red-400" />
-        </button>
+
+      <div className="p-2">
+        <p className={`text-xs font-medium line-clamp-2 ${entry.is_completed ? 'text-dark-300 line-through' : 'text-dark-100'}`} title={entry.name}>{entry.name}</p>
+        <p className="text-[10px] text-dark-500 font-mono mt-1">{entry.completion_date ? formatDateBR(entry.completion_date) : '—'}</p>
+
+        <div className="mt-1.5 flex items-center justify-end gap-1 opacity-90 group-hover:opacity-100">
+          <button onClick={() => onEdit(entry)} className="p-1 rounded hover:bg-dark-700" title="Editar data">
+            <Edit3 size={11} className="text-dark-400 hover:text-accent-400" />
+          </button>
+          <button
+            onClick={() => entry.linked_game ? onUnlink(entry) : onLink(entry)}
+            className="p-1 rounded hover:bg-dark-700"
+            title={entry.linked_game ? 'Desvincular' : 'Vincular com jogo zerado'}
+          >
+            {entry.linked_game ? (
+              <Unlink size={11} className="text-accent-400 hover:text-red-400" />
+            ) : (
+              <Link2 size={11} className="text-dark-400 hover:text-green-400" />
+            )}
+          </button>
+          <button onClick={() => onDelete(entry)} className="p-1 rounded hover:bg-dark-700" title="Excluir entrada">
+            <Trash2 size={11} className="text-dark-400 hover:text-red-400" />
+          </button>
+        </div>
       </div>
     </div>
   );

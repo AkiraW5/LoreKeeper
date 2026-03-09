@@ -87,4 +87,23 @@
   .text-gradient {
     @apply bg-gradient-to-r from-accent-400 to-purple-400 bg-clip-text text-transparent;
   }
+
+  .achievement-pop {
+    animation: achievement-pop 500ms ease-out;
+  }
+}
+
+@keyframes achievement-pop {
+  0% {
+    transform: scale(0.82);
+    filter: brightness(1);
+  }
+  55% {
+    transform: scale(1.08);
+    filter: brightness(1.35);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
 }

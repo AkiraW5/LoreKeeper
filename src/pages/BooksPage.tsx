@@ -84,45 +84,51 @@ export default function BooksPage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map(item => (
-            <div key={item.id} className="stat-card relative group">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3 flex-1">
-                  {item.cover_url ? (
-                    <img src={item.cover_url} alt="" className="w-12 h-16 object-cover rounded shrink-0 bg-dark-700" />
-                  ) : null}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-dark-100">{item.title}</h3>
-                    <p className="text-xs text-dark-400 mt-0.5">{item.type} • {item.genre} {item.author && `• ${item.author}`}</p>
-                  </div>
-                </div>
-                <span className={`badge border text-[10px] ${getStatusColor(item.status)}`}>{item.status}</span>
-              </div>
-
-              <div className="mt-3 space-y-1.5">
-                <div className="flex justify-between text-xs">
-                  <span className="text-dark-400">Páginas</span>
-                  <span className="text-dark-200">{item.pages_read} / {item.total_pages || '?'}</span>
-                </div>
-                <div className="w-full h-1.5 bg-dark-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-cyan-500 rounded-full" style={{
-                    width: `${item.total_pages > 0 ? (item.pages_read / item.total_pages) * 100 : 0}%`
-                  }} />
-                </div>
+            <article key={item.id} className="group bg-dark-800/50 border border-dark-700/50 rounded-xl overflow-hidden hover:border-accent-500/40 transition-all duration-200">
+              <div className="aspect-[2/3] bg-dark-700 overflow-hidden relative">
+                {item.cover_url ? (
+                  <img src={item.cover_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-dark-500 text-xs">Sem capa</div>
+                )}
+                <span className={`badge border text-[10px] absolute top-2 left-2 ${getStatusColor(item.status)} bg-dark-950/85 border-dark-500/70 shadow-md backdrop-blur-sm`}>{item.status}</span>
                 {item.rating && (
-                  <div className="flex justify-between text-xs mt-1">
-                    <span className="text-dark-400">Nota</span>
-                    <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                  <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-dark-950/90 border border-dark-500/60 shadow-md text-xs font-bold">
+                    <span className={getRatingColor(item.rating)}>{item.rating}</span>
                   </div>
                 )}
               </div>
 
-              <div className="absolute bottom-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-600"><Edit3 size={13} className="text-dark-400 hover:text-accent-400" /></button>
-                <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-600"><Trash2 size={13} className="text-dark-400 hover:text-red-400" /></button>
+              <div className="p-3">
+                <h3 className="font-semibold text-dark-100 line-clamp-1" title={item.title}>{item.title}</h3>
+                <p className="text-xs text-dark-400 mt-1 line-clamp-1">{item.type} • {item.genre} {item.author && `• ${item.author}`}</p>
+
+                <div className="mt-2 space-y-1.5">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-dark-400">Páginas</span>
+                    <span className="text-dark-200">{item.pages_read} / {item.total_pages || '?'}</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-dark-700 rounded-full overflow-hidden">
+                    <div className="h-full bg-cyan-500 rounded-full" style={{
+                      width: `${item.total_pages > 0 ? (item.pages_read / item.total_pages) * 100 : 0}%`
+                    }} />
+                  </div>
+                </div>
+
+                {item.rating && (
+                  <div className="text-[11px] text-dark-400 mt-2">
+                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                  </div>
+                )}
+
+                <div className="mt-2 flex items-center justify-end gap-1">
+                  <button onClick={() => openEdit(item)} className="p-1.5 rounded hover:bg-dark-700" title="Editar"><Edit3 size={13} className="text-dark-400 hover:text-accent-400" /></button>
+                  <button onClick={() => setDeleteTarget(item)} className="p-1.5 rounded hover:bg-dark-700" title="Excluir"><Trash2 size={13} className="text-dark-400 hover:text-red-400" /></button>
+                </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
         {filtered.length === 0 && <div className="text-center text-dark-400 py-12">Nenhum título encontrado</div>}

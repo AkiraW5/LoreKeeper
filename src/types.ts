@@ -97,6 +97,7 @@ export interface Movie {
   genre: string;
   director: string;
   year: number;
+  status: 'Assistindo' | 'Concluído' | 'Dropado' | 'Pausado' | 'Planejado';
   watch_date: string;
   duration_min: number;
   rating: number;

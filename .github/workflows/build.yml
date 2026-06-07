@@ -44,24 +44,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build renderer + main + preload
+        run: npx vite build
+
       - name: Package Windows app
-        run: npm run electron:build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # --publish never: o electron-builder NÃO publica; quem publica é o passo abaixo.
+        run: npx electron-builder --win --publish never
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: lorekeeper-windows
-          path: |
-            release/*.exe
-            release/*.exe.blockmap
+          path: release/*.exe
           if-no-files-found: error
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            release/*.exe
-            release/*.exe.blockmap
+          files: release/*.exe
           generate_release_notes: true

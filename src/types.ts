@@ -15,6 +15,7 @@ export interface CompletedGame {
   completion_condition: string;
   is_gold: boolean;
   mission_complete: boolean;
+  mission_id: string;
   notes: string;
   cover_url: string;
   description: string;
@@ -59,7 +60,8 @@ export interface GameSeriesEntry {
   completion_date: string;
   sort_order: number;
   created_at: string;
-  linked_game_id?: string; // linked completed game
+  linked_game_id?: string; // id of the linked completed game
+  linked_game?: CompletedGame | null; // populated at load time via JOIN
 }
 
 export interface Achievement {
@@ -87,6 +89,7 @@ export interface MainMission {
   total_games: number;
   completed_games: number;
   target_date: string;
+  cover_url: string;
   created_at: string;
   updated_at: string;
 }

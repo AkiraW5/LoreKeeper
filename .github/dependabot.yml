@@ -1,0 +1,32 @@
+version: 2
+updates:
+  # Dependências npm do app
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      # Agrupa devDependencies de patch/minor num PR só (menos ruído)
+      dev-minor-patch:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      # Agrupa dependências de produção de patch/minor
+      prod-minor-patch:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Electron major é upgrade manual e testado, não automático
+      - dependency-name: electron
+        update-types:
+          - version-update:semver-major
+
+  # Mantém as próprias actions do CI atualizadas
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

@@ -8,7 +8,7 @@ Aplicativo desktop pessoal para rastrear mídias consumidas — jogos, filmes, s
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-blue)
 
-Versão atual: **1.1.0**
+Versão atual: **1.1.2**
 
 ---
 
@@ -72,6 +72,13 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 - **Missões** — Crie objetivos personalizados com prazo, progresso e capa/foto
 - **Conquistas** — Sistema de XP e nível baseado nas suas atividades
 - **Integração com Jogos Zerados** — Vincule jogos a missões e atualize progresso automaticamente
+
+## Novidades da 1.1.2
+
+- Correção de bug crítico nas Conquistas: a verificação falhava silenciosamente e nunca desbloqueava conquistas nem recalculava XP/nível
+- Sincronização de Missões agora considera apenas os jogos da própria missão
+- Atualização de segurança das dependências (Electron, Vite, uuid e transitivas)
+- Pipeline de CI/CD com GitHub Actions: build automático e publicação de release ao enviar uma tag
 
 ## Novidades da 1.1.0
 

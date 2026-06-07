@@ -163,7 +163,7 @@ export default function AchievementsPage() {
         db.query('SELECT id, status, end_date FROM manga'),
         db.query('SELECT id, status, end_date FROM books'),
         db.query('SELECT COUNT(*) as count FROM game_backlog'),
-        db.query('SELECT COUNT(*) as count FROM main_missions WHERE completed = 1'),
+        db.query('SELECT COUNT(*) as count FROM main_missions WHERE total_games > 0 AND completed_games >= total_games'),
         db.query(`
           SELECT gs.id FROM game_series gs
           WHERE NOT EXISTS (

@@ -71,9 +71,10 @@ export default function MissionsPage() {
   }
 
   async function syncFromGames(mission: MainMission) {
-    // Count games marked with mission_complete
+    // Count games linked to THIS mission and marked with mission_complete
     const result = await window.api.db.queryOne(
-      'SELECT COUNT(*) as count FROM completed_games WHERE mission_complete = 1'
+      'SELECT COUNT(*) as count FROM completed_games WHERE mission_id = ? AND mission_complete = 1',
+      [mission.id]
     );
     const completedCount = result?.count || 0;
     await window.api.db.update('main_missions', mission.id, {

@@ -159,7 +159,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-dark-100">LoreKeeper</h2>
-              <p className="text-xs text-dark-400">v1.1.2</p>
+              <p className="text-xs text-dark-400">v1.2.0</p>
             </div>
           </div>
           <p className="text-xs text-dark-400">

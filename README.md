@@ -8,7 +8,7 @@ Aplicativo desktop pessoal para rastrear mídias consumidas — jogos, filmes, s
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-blue)
 
-Versão atual: **1.1.2**
+Versão atual: **1.2.0**
 
 ---
 
@@ -67,11 +67,27 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 - Gráficos de jogos por ano, nota, dificuldade
 - Stats por plataforma e gênero
 
+### 📈 Acompanhamento & Insights
+
+- **Em Andamento** — Tudo que você está consumindo agora num só lugar (jogos jogando, séries/animes assistindo, mangás/livros lendo) com card de destaque, barras de progresso e botão +N que conclui automaticamente ao chegar no fim
+- **Mapa de Atividade** — Heatmap estilo GitHub com suas conclusões ao longo do ano, dias ativos, melhor sequência e dia favorito
+- **Estatísticas** — KPIs e gráficos interativos: conclusões e horas por ano, distribuição de notas, top gêneros/plataformas, dificuldade e comparativo entre mídias
+- **Radar de Hábitos** — Leituras do seu histórico: perfil de jogador, sugestões personalizadas ("faz X meses que você não joga tal plataforma — que tal voltar?") e curiosidades (jogo mais longo, melhor ano, jogos da vida)
+- **Desafio Anual** — Quadro de metas automáticas por categoria, sugeridas pelo seu ritmo do ano anterior, com 4 tipos (volume, tempo, variedade, qualidade) e projeção de conclusão
+
 ### 🎯 Missões & Conquistas
 
 - **Missões** — Crie objetivos personalizados com prazo, progresso e capa/foto
-- **Conquistas** — Sistema de XP e nível baseado nas suas atividades
+- **Conquistas** — Sistema de XP e nível, com barra de progresso rumo às conquistas bloqueadas e painel "Próximas a desbloquear"
 - **Integração com Jogos Zerados** — Vincule jogos a missões e atualize progresso automaticamente
+
+## Novidades da 1.2.0
+
+- **Em Andamento** — hub central do que você está consumindo agora (jogos, séries, animes, mangás, livros) com card destaque, barras de progresso, botão +N e mapa de atividade (heatmap) com sequências
+- **Estatísticas** — página com KPIs e gráficos: conclusões e horas por ano, distribuição de notas, top gêneros/plataformas, dificuldade e comparativo de mídias
+- **Radar de Hábitos** — insights personalizados sobre seu perfil de jogador, sugestões ("faz X meses que você não joga tal plataforma") e curiosidades do seu histórico
+- **Desafio Anual** — quadro de metas automáticas por tipo (volume, tempo, variedade, qualidade), sugeridas pelo seu ritmo e com projeção de conclusão
+- **Conquistas** — barra de progresso rumo às conquistas bloqueadas e painel "Próximas a desbloquear"
 
 ## Novidades da 1.1.2
 

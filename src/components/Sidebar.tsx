@@ -1,11 +1,15 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Activity,
+  BarChart3,
+  Radar,
   Gamepad2,
   ListTodo,
   Layers,
   Target,
   Trophy,
+  Flag,
   Film,
   Tv,
   Play,
@@ -29,6 +33,9 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, group: 'Geral' },
+  { id: 'in-progress', label: 'Em Andamento', icon: <Activity size={18} />, group: 'Geral' },
+  { id: 'statistics', label: 'Estatísticas', icon: <BarChart3 size={18} />, group: 'Geral' },
+  { id: 'radar', label: 'Radar de Hábitos', icon: <Radar size={18} />, group: 'Geral' },
   { id: 'games-completed', label: 'Jogos Zerados', icon: <Gamepad2 size={18} />, group: 'Jogos' },
   { id: 'games-backlog', label: 'Backlog', icon: <ListTodo size={18} />, group: 'Jogos' },
   { id: 'games-series', label: 'Séries de Jogos', icon: <Layers size={18} />, group: 'Jogos' },
@@ -38,6 +45,7 @@ const navItems: NavItem[] = [
   { id: 'anime', label: 'Animes', icon: <Play size={18} />, group: 'Mídia' },
   { id: 'manga', label: 'Mangás', icon: <BookOpen size={18} />, group: 'Mídia' },
   { id: 'books', label: 'Livros', icon: <Library size={18} />, group: 'Mídia' },
+  { id: 'challenge', label: 'Desafio Anual', icon: <Flag size={18} />, group: 'Sistema' },
   { id: 'achievements', label: 'Conquistas', icon: <Trophy size={18} />, group: 'Sistema' },
   { id: 'settings', label: 'Configurações', icon: <Settings size={18} />, group: 'Sistema' },
 ];

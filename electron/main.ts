@@ -87,7 +87,7 @@ ipcMain.handle('window:close', (event) => {
 const ALLOWED_TABLES = [
   'completed_games', 'game_backlog', 'game_series', 'game_series_entries',
   'movies', 'tv_shows', 'animes', 'manga', 'books', 'main_missions', 'achievements',
-  'game_series_entries_link', 'user_profile', 'achievements',
+  'game_series_entries_link', 'user_profile', 'annual_challenges',
 ];
 
 function assertTable(table: string) {

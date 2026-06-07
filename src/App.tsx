@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
+import InProgressPage from './pages/InProgress';
+import StatisticsPage from './pages/Statistics';
+import RadarPage from './pages/Radar';
+import ChallengePage from './pages/Challenge';
 import CompletedGamesPage from './pages/CompletedGames';
 import GameBacklogPage from './pages/GameBacklog';
 import GameSeriesPage from './pages/GameSeries';
@@ -21,6 +25,7 @@ export default function App() {
   function renderContent() {
     switch (activeSection) {
       case 'dashboard': return <Dashboard />;
+      case 'in-progress': return <InProgressPage />;
       case 'games-completed': return <CompletedGamesPage />;
       case 'games-backlog': return <GameBacklogPage />;
       case 'games-series': return <GameSeriesPage />;
@@ -30,6 +35,9 @@ export default function App() {
       case 'manga': return <MangaPage />;
       case 'books': return <BooksPage />;
       case 'missions': return <MissionsPage />;
+      case 'challenge': return <ChallengePage />;
+      case 'radar': return <RadarPage />;
+      case 'statistics': return <StatisticsPage />;
       case 'achievements': return <AchievementsPage />;
       case 'settings': return <SettingsPage />;
       default: return <Dashboard />;

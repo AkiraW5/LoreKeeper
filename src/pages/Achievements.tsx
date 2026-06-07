@@ -110,6 +110,7 @@ export default function AchievementsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [checking, setChecking] = useState(false);
   const [recentlyUnlockedIds, setRecentlyUnlockedIds] = useState<Set<string>>(new Set());
+  const [progress, setProgress] = useState<Record<string, { current: number; target: number }>>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -206,81 +207,90 @@ export default function AchievementsPage() {
       const completedMissions = missions[0]?.count || 0;
       const totalMediaCompleted = games.length + moviesCount + showsCount + animeCount + mangaCount + booksCount;
 
-      // Check conditions
-      const checks: Record<string, boolean> = {
-        first_game: games.length >= 1,
-        ten_games: games.length >= 10,
-        fifty_games: games.length >= 50,
-        hundred_games: games.length >= 100,
-        speedrunner: hasSpeedrun,
-        marathon: hasMarathon,
-        perfectionist: goldCount >= 5,
-        bookworm: booksCount >= 5,
-        otaku: animeCount >= 10,
-        cinephile: moviesCount >= 20,
-        binge_watcher: showsCount >= 5,
-        manga_reader: mangaCount >= 10,
-        all_platforms: platforms.size >= 5,
-        genre_explorer: genres.size >= 8,
-        series_complete: completeSeries.length > 0,
-        five_hundred_hours: totalHours >= 500,
-        thousand_hours: totalHours >= 1000,
-        max_rating: hasMaxRating,
-        triple_aaa: aaaCount >= 3,
-        daily_player: months.size >= 12,
-        twenty_five_games: games.length >= 25,
-        seventy_five_games: games.length >= 75,
-        one_fifty_games: games.length >= 150,
-        two_hundred_games: games.length >= 200,
-        three_hundred_games: games.length >= 300,
-        first_platinum: goldCount >= 1,
-        ten_platinums: goldCount >= 10,
-        twenty_five_platinums: goldCount >= 25,
-        hundred_hours: totalHours >= 100,
-        two_fifty_hours: totalHours >= 250,
-        seven_fifty_hours: totalHours >= 750,
-        one_thousand_five_hundred_hours: totalHours >= 1500,
-        two_thousand_five_hundred_hours: totalHours >= 2500,
-        tri_platform: platforms.size >= 3,
-        seven_platforms: platforms.size >= 7,
-        ten_platforms: platforms.size >= 10,
-        five_genres: genres.size >= 5,
-        twelve_genres: genres.size >= 12,
-        sixteen_genres: genres.size >= 16,
-        six_months: months.size >= 6,
-        twenty_four_months: months.size >= 24,
-        thirty_six_months: months.size >= 36,
-        five_movies: moviesCount >= 5,
-        fifty_movies: moviesCount >= 50,
-        hundred_movies_plus: moviesCount >= 100,
-        ten_shows: showsCount >= 10,
-        twenty_shows: showsCount >= 20,
-        twenty_five_anime: animeCount >= 25,
-        fifty_anime: animeCount >= 50,
-        twenty_five_manga: mangaCount >= 25,
-        fifty_manga: mangaCount >= 50,
-        ten_books: booksCount >= 10,
-        twenty_five_books: booksCount >= 25,
-        fifty_books: booksCount >= 50,
-        series_triple: completeSeries.length >= 3,
-        series_quintuple: completeSeries.length >= 5,
-        series_decathlon: completeSeries.length >= 10,
-        ten_aaa: aaaCount >= 10,
-        twenty_five_aaa: aaaCount >= 25,
-        rating_master: games.length >= 20 && averageRating >= 9,
-        critic_mode: games.length >= 50 && hasMaxRating && hasLowRating,
-        mission_starter: completedMissions >= 1,
-        mission_hunter: completedMissions >= 10,
-        mission_legend: completedMissions >= 25,
-        backlog_builder: backlogCount >= 25,
-        backlog_collector: backlogCount >= 100,
-        media_generalist: games.length >= 1 && moviesCount >= 1 && showsCount >= 1 && animeCount >= 1 && mangaCount >= 1 && booksCount >= 1,
-        total_media_100: totalMediaCompleted >= 100,
-        total_media_300: totalMediaCompleted >= 300,
-        year_rounder: uniqueYears.size >= 5,
+      // Progresso (atual/meta) de cada conquista — permite barra de progresso nas bloqueadas
+      const P = (current: number, target: number) => ({ current, target });
+      const B = (cond: boolean) => ({ current: cond ? 1 : 0, target: 1 });
+      const mediaGeneralistDone = [games.length, moviesCount, showsCount, animeCount, mangaCount, booksCount].filter(n => n >= 1).length;
+
+      const progressMap: Record<string, { current: number; target: number }> = {
+        first_game: P(games.length, 1),
+        ten_games: P(games.length, 10),
+        fifty_games: P(games.length, 50),
+        hundred_games: P(games.length, 100),
+        speedrunner: B(hasSpeedrun),
+        marathon: B(hasMarathon),
+        perfectionist: P(goldCount, 5),
+        bookworm: P(booksCount, 5),
+        otaku: P(animeCount, 10),
+        cinephile: P(moviesCount, 20),
+        binge_watcher: P(showsCount, 5),
+        manga_reader: P(mangaCount, 10),
+        all_platforms: P(platforms.size, 5),
+        genre_explorer: P(genres.size, 8),
+        series_complete: P(completeSeries.length, 1),
+        five_hundred_hours: P(Math.floor(totalHours), 500),
+        thousand_hours: P(Math.floor(totalHours), 1000),
+        max_rating: B(hasMaxRating),
+        triple_aaa: P(aaaCount, 3),
+        daily_player: P(months.size, 12),
+        twenty_five_games: P(games.length, 25),
+        seventy_five_games: P(games.length, 75),
+        one_fifty_games: P(games.length, 150),
+        two_hundred_games: P(games.length, 200),
+        three_hundred_games: P(games.length, 300),
+        first_platinum: P(goldCount, 1),
+        ten_platinums: P(goldCount, 10),
+        twenty_five_platinums: P(goldCount, 25),
+        hundred_hours: P(Math.floor(totalHours), 100),
+        two_fifty_hours: P(Math.floor(totalHours), 250),
+        seven_fifty_hours: P(Math.floor(totalHours), 750),
+        one_thousand_five_hundred_hours: P(Math.floor(totalHours), 1500),
+        two_thousand_five_hundred_hours: P(Math.floor(totalHours), 2500),
+        tri_platform: P(platforms.size, 3),
+        seven_platforms: P(platforms.size, 7),
+        ten_platforms: P(platforms.size, 10),
+        five_genres: P(genres.size, 5),
+        twelve_genres: P(genres.size, 12),
+        sixteen_genres: P(genres.size, 16),
+        six_months: P(months.size, 6),
+        twenty_four_months: P(months.size, 24),
+        thirty_six_months: P(months.size, 36),
+        five_movies: P(moviesCount, 5),
+        fifty_movies: P(moviesCount, 50),
+        hundred_movies_plus: P(moviesCount, 100),
+        ten_shows: P(showsCount, 10),
+        twenty_shows: P(showsCount, 20),
+        twenty_five_anime: P(animeCount, 25),
+        fifty_anime: P(animeCount, 50),
+        twenty_five_manga: P(mangaCount, 25),
+        fifty_manga: P(mangaCount, 50),
+        ten_books: P(booksCount, 10),
+        twenty_five_books: P(booksCount, 25),
+        fifty_books: P(booksCount, 50),
+        series_triple: P(completeSeries.length, 3),
+        series_quintuple: P(completeSeries.length, 5),
+        series_decathlon: P(completeSeries.length, 10),
+        ten_aaa: P(aaaCount, 10),
+        twenty_five_aaa: P(aaaCount, 25),
+        rating_master: B(games.length >= 20 && averageRating >= 9),
+        critic_mode: B(games.length >= 50 && hasMaxRating && hasLowRating),
+        mission_starter: P(completedMissions, 1),
+        mission_hunter: P(completedMissions, 10),
+        mission_legend: P(completedMissions, 25),
+        backlog_builder: P(backlogCount, 25),
+        backlog_collector: P(backlogCount, 100),
+        media_generalist: P(mediaGeneralistDone, 6),
+        total_media_100: P(totalMediaCompleted, 100),
+        total_media_300: P(totalMediaCompleted, 300),
+        year_rounder: P(uniqueYears.size, 5),
       };
 
-      const pending = currentAchievements.filter((a: Achievement) => !a.unlocked_at && checks[a.key]);
+      setProgress(progressMap);
+      const isUnlocked = (key: string) => {
+        const p = progressMap[key];
+        return !!p && p.current >= p.target;
+      };
+      const pending = currentAchievements.filter((a: Achievement) => !a.unlocked_at && isUnlocked(a.key));
       const unlockedNowIds = pending.map((a: Achievement) => a.id);
       const unlockedNowKeys = pending.map((a: Achievement) => a.key);
 
@@ -343,6 +353,13 @@ export default function AchievementsPage() {
   const levelInfo = profile ? getLevelFromXp(profile.total_xp) : { level: 1, currentXp: 0, nextLevelXp: 100 };
   const levelPct = Math.round((levelInfo.currentXp / levelInfo.nextLevelXp) * 100);
 
+  const nextToUnlock = achievements
+    .filter(a => !a.unlocked_at && progress[a.key])
+    .map(a => { const p = progress[a.key]; return { a, p, pct: p.target > 0 ? Math.min(100, (p.current / p.target) * 100) : 0 }; })
+    .filter(x => x.pct > 0 && x.pct < 100)
+    .sort((x, y) => y.pct - x.pct)
+    .slice(0, 5);
+
   return (
     <div className="p-6 h-full overflow-y-auto">
       <div className="sticky top-0 z-20 pb-4 mb-4 bg-dark-950/85 backdrop-blur-md border-b border-dark-700/40">
@@ -404,6 +421,8 @@ export default function AchievementsPage() {
               const unlockedNow = recentlyUnlockedIds.has(a.id);
               const unlockedState = !!a.unlocked_at;
               const rarity = rarityMeta(getAchievementRarity(a));
+              const prog = progress[a.key];
+              const pct = prog && prog.target > 0 ? Math.min(100, (prog.current / prog.target) * 100) : 0;
 
               return (
                 <article
@@ -426,11 +445,24 @@ export default function AchievementsPage() {
                     </div>
                   )}
 
-                  <p className={`text-xs font-semibold line-clamp-1 ${unlockedState ? 'text-dark-100' : 'text-dark-400'}`}>{a.name}</p>
+                  <p className={`text-xs font-semibold line-clamp-1 ${unlockedState ? 'text-dark-100' : 'text-dark-300'}`}>{a.name}</p>
                   <p className={`text-[10px] mt-1 line-clamp-2 ${unlockedState ? 'text-dark-300' : 'text-dark-500'}`}>
-                    {unlockedState ? a.description : '???'}
+                    {a.description}
                   </p>
-                  <p className="text-[10px] mt-1">{rarity.emoji} {rarity.label}</p>
+
+                  {!unlockedState && prog && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-[9px] text-dark-500 mb-0.5">
+                        <span className="font-mono">{Math.min(prog.current, prog.target)}/{prog.target}</span>
+                        <span>{Math.round(pct)}%</span>
+                      </div>
+                      <div className="h-1 bg-dark-700 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-accent-500 to-cyan-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-[10px] mt-1.5">{rarity.emoji} {rarity.label}</p>
                 </article>
               );
             })}
@@ -459,7 +491,30 @@ export default function AchievementsPage() {
           </div>
         </div>
 
-        <aside className="xl:col-span-1">
+        <aside className="xl:col-span-1 space-y-4">
+          {nextToUnlock.length > 0 && (
+            <div className="rounded-xl border border-dark-700/60 bg-dark-900/65 p-4">
+              <h2 className="text-sm font-semibold text-dark-200 mb-3 flex items-center gap-1.5">
+                <Zap size={14} className="text-accent-400" /> Próximas a desbloquear
+              </h2>
+              <div className="space-y-3">
+                {nextToUnlock.map(({ a, p, pct }) => (
+                  <div key={a.id}>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-xs text-dark-200 line-clamp-1 flex items-center gap-1.5">
+                        <span>{a.icon}</span> {a.name}
+                      </span>
+                      <span className="text-[10px] text-dark-500 font-mono shrink-0">{Math.min(p.current, p.target)}/{p.target}</span>
+                    </div>
+                    <div className="h-1.5 bg-dark-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-gradient-to-r from-accent-500 to-cyan-400 rounded-full" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="rounded-xl border border-dark-700/60 bg-dark-900/65 p-4">
             <h2 className="text-sm font-semibold text-dark-200 mb-3">Atividade Recente</h2>
             <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">

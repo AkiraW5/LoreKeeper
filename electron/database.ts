@@ -301,6 +301,15 @@ function createTables() {
       level INTEGER NOT NULL DEFAULT 1,
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`,
+    // Metas anuais (Desafio Anual) — uma linha por ano + categoria
+    `CREATE TABLE IF NOT EXISTS annual_challenges (
+      id TEXT PRIMARY KEY,
+      year INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      target INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`,
   ];
 
   for (const sql of statements) {

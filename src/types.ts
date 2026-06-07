@@ -264,8 +264,9 @@ export const MEDIA_GENRES = [
   'Shounen', 'Seinen', 'Shoujo', 'Josei', 'Ecchi', 'Outro',
 ];
 
-export type MediaSection = 
+export type MediaSection =
   | 'dashboard'
+  | 'in-progress'
   | 'games-completed'
   | 'games-backlog'
   | 'games-series'
@@ -275,5 +276,17 @@ export type MediaSection =
   | 'anime'
   | 'manga'
   | 'books'
+  | 'challenge'
+  | 'radar'
+  | 'statistics'
   | 'achievements'
   | 'settings';
+
+export interface AnnualChallenge {
+  id: string;
+  year: number;
+  category: string;
+  target: number;
+  created_at: string;
+  updated_at: string;
+}

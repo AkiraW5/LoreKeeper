@@ -1,9 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
 import { format, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function generateId(): string {
-  return uuidv4();
+  return crypto.randomUUID();
 }
 
 export function formatDateBR(dateStr: string): string {

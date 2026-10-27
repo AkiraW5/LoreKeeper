@@ -84,5 +84,9 @@
       "artifactName": "${productName}-${version}.${ext}"
     },
     "asar": true
+  },
+  "allowScripts": {
+    "electron": true,
+    "esbuild": true
   }
 }

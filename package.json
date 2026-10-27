@@ -31,8 +31,8 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
-    "electron": "^39.8.5",
-    "electron-builder": "^25.1.8",
+    "electron": "^44.9.3",
+    "electron-builder": "^26.18.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.7.3",
@@ -86,7 +86,6 @@
     "asar": true
   },
   "allowScripts": {
-    "electron": true,
     "esbuild": true
   }
 }

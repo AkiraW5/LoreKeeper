@@ -34,5 +34,11 @@ interface Window {
       get: () => Promise<any>;
       set: (key: string, value: string) => Promise<any>;
     };
+    updates: {
+      check: () => Promise<void>;
+      download: () => Promise<unknown>;
+      openNotes: (version: string) => Promise<void>;
+      on: (channel: 'available' | 'progress' | 'error', cb: (payload: any) => void) => () => void;
+    };
   };
 }

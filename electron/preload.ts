@@ -38,6 +38,18 @@ contextBridge.exposeInMainWorld('api', {
     books: (query: string) => ipcRenderer.invoke('api:searchBooks', query),
   },
 
+  // Auto-update
+  updates: {
+    check: () => ipcRenderer.invoke('update:check'),
+    download: () => ipcRenderer.invoke('update:download'),
+    openNotes: (version: string) => ipcRenderer.invoke('update:openNotes', version),
+    on: (channel: 'available' | 'progress' | 'error', cb: (payload: any) => void) => {
+      const listener = (_e: Electron.IpcRendererEvent, payload: any) => cb(payload);
+      ipcRenderer.on(`update:${channel}`, listener);
+      return () => { ipcRenderer.removeListener(`update:${channel}`, listener); };
+    },
+  },
+
   // Helpers
 
   // Config (API keys)

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { autoUpdater } from 'electron-updater';
@@ -58,13 +58,29 @@ app.whenReady().then(async () => {
   await initDatabase();
   setupIpcHandlers();
   createWindow();
-
-  // Auto-update via GitHub Releases (só no instalador NSIS; o portable não se atualiza).
-  // Baixa em segundo plano, avisa com notificação e instala ao fechar o app.
-  if (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR) {
-    autoUpdater.checkForUpdatesAndNotify().catch(err => console.error('Auto-update falhou:', err));
-  }
 });
+
+// Auto-update via GitHub Releases (só no instalador NSIS; o portable não se atualiza).
+// Nada é baixado sem o usuário aceitar: o renderer mostra o aviso e chama update:download.
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
+
+function sendUpdate(channel: string, payload?: unknown) {
+  mainWindow?.webContents.send(channel, payload);
+}
+
+autoUpdater.on('update-available', info => sendUpdate('update:available', { version: info.version }));
+autoUpdater.on('download-progress', p => sendUpdate('update:progress', Math.round(p.percent)));
+autoUpdater.on('update-downloaded', () => autoUpdater.quitAndInstall(true, true));
+autoUpdater.on('error', err => sendUpdate('update:error', err?.message ?? String(err)));
+
+ipcMain.handle('update:check', async () => {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+  await autoUpdater.checkForUpdates().catch(err => console.error('Auto-update falhou:', err));
+});
+ipcMain.handle('update:download', () => autoUpdater.downloadUpdate());
+ipcMain.handle('update:openNotes', (_event, version: string) =>
+  shell.openExternal(`https://github.com/AkiraW5/LoreKeeper/releases/tag/v${version}`));
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

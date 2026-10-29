@@ -2,13 +2,13 @@
 
 Aplicativo desktop pessoal para rastrear mídias consumidas — jogos, filmes, séries, animes, mangás, livros e mais.
 
-![Electron](https://img.shields.io/badge/Electron-33-47848F?logo=electron&logoColor=white)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Electron](https://img.shields.io/badge/Electron-44-47848F?logo=electron&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![License](https://img.shields.io/badge/license-%20%20GNU%20GPLv3%20-blue)
 
-Versão atual: **1.2.0**
+[![Release](https://img.shields.io/github/v/release/AkiraW5/LoreKeeper?label=vers%C3%A3o)](../../releases/latest) · [Changelog](CHANGELOG.md)
 
 ---
 
@@ -23,11 +23,15 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 3. Execute o instalador e siga as instruções
 4. O app será instalado e criará um atalho no menu iniciar
 
+O instalador **se atualiza sozinho**: quando sai uma versão nova, o app mostra um aviso perguntando se você quer atualizar. Nada é baixado sem você aceitar.
+
 ### Opção 2 — Portable (sem instalação)
 
 1. Vá até a aba [**Releases**](../../releases) deste repositório
 2. Baixe o arquivo `LoreKeeper-X.X.X.exe` (versão portable)
 3. Coloque em qualquer pasta e execute — pronto!
+
+A versão portable **não** se atualiza sozinha: baixe a nova versão nos Releases quando quiser atualizar.
 
 > **Nota:** Na primeira execução, o Windows SmartScreen pode exibir um aviso (app não assinado digitalmente). Clique em "Mais informações" → "Executar assim mesmo".
 
@@ -35,13 +39,14 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 
 ## Stack
 
-- **Electron 33** — Aplicativo desktop multiplataforma
-- **React 18** + **TypeScript** — UI reativa e tipada
-- **Vite 6** — Build rápido com HMR
+- **Electron 44** — Aplicativo desktop multiplataforma
+- **React 19** + **TypeScript 6** — UI reativa e tipada
+- **Vite 8** — Build rápido com HMR
 - **Tailwind CSS 3** — Estilização utilitária com tema escuro
 - **sql.js** — SQLite compilado em WebAssembly (sem dependências nativas)
-- **Recharts** — Gráficos e estatísticas interativas
+- **Recharts 3** — Gráficos e estatísticas interativas
 - **Lucide React** — Ícones modernos
+- **electron-updater** — Atualização automática via GitHub Releases
 
 ## Funcionalidades
 
@@ -81,37 +86,6 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 - **Conquistas** — Sistema de XP e nível, com barra de progresso rumo às conquistas bloqueadas e painel "Próximas a desbloquear"
 - **Integração com Jogos Zerados** — Vincule jogos a missões e atualize progresso automaticamente
 
-## Novidades da 1.2.0
-
-- **Em Andamento** — hub central do que você está consumindo agora (jogos, séries, animes, mangás, livros) com card destaque, barras de progresso, botão +N e mapa de atividade (heatmap) com sequências
-- **Estatísticas** — página com KPIs e gráficos: conclusões e horas por ano, distribuição de notas, top gêneros/plataformas, dificuldade e comparativo de mídias
-- **Radar de Hábitos** — insights personalizados sobre seu perfil de jogador, sugestões ("faz X meses que você não joga tal plataforma") e curiosidades do seu histórico
-- **Desafio Anual** — quadro de metas automáticas por tipo (volume, tempo, variedade, qualidade), sugeridas pelo seu ritmo e com projeção de conclusão
-- **Conquistas** — barra de progresso rumo às conquistas bloqueadas e painel "Próximas a desbloquear"
-
-## Novidades da 1.1.2
-
-- Correção de bug crítico nas Conquistas: a verificação falhava silenciosamente e nunca desbloqueava conquistas nem recalculava XP/nível
-- Sincronização de Missões agora considera apenas os jogos da própria missão
-- Atualização de segurança das dependências (Electron, Vite, uuid e transitivas)
-- Pipeline de CI/CD com GitHub Actions: build automático e publicação de release ao enviar uma tag
-
-## Novidades da 1.1.0
-
-- Open Library adicionado como fonte principal para metadados de livros (com fallback para Google Books)
-- Melhorias em Séries de Jogos:
-  - Auto-vínculo mais preciso com jogos zerados
-  - Busca por API ao adicionar e editar entradas
-  - Persistência de capa por entrada da série
-  - Correção do bug visual de `0` no checkbox
-- Melhorias em Jogos Zerados:
-  - Fluxo de `Missão Completa` corrigido
-  - Indicador visual (`🎯`) para jogos marcados como missão completa
-  - Recontagem de progresso da missão em criação, edição e exclusão
-- Melhorias em Missões:
-  - Upload/seleção de imagem para missão
-  - Criação e listagem com visual de capa
-
 ### 🔍 Busca de Metadados via API
 
 - **RAWG.io** — Busca automática de capas, descrições e dados de jogos
@@ -124,6 +98,13 @@ Você **não precisa** instalar Node.js, Electron ou qualquer dependência de de
 
 - Escolha onde salvar o banco de dados (Google Drive, OneDrive, Dropbox)
 - Configure as chaves de API gratuitamente
+
+## Novidades da 1.2.2
+
+- **Aviso de atualização dentro do app** — quando sai uma versão nova, aparece um aviso discreto perguntando se você quer atualizar, com barra de progresso e link para as novidades
+- Releases com descrição detalhada
+
+O histórico completo de versões está no [CHANGELOG](CHANGELOG.md).
 
 ## Desenvolvimento
 
@@ -140,6 +121,12 @@ npm run electron:dev
 npm run electron:build
 ```
 
+### Lançando uma versão
+
+1. Adicione a seção `## [X.Y.Z]` no [CHANGELOG.md](CHANGELOG.md) — ela vira a descrição do release (o workflow falha se ela não existir)
+2. Rode `npm version patch` (ou `minor` / `major`) e depois `git push --follow-tags`
+3. O GitHub Actions gera o instalador e o portable, publica o release e os apps instalados recebem o aviso de atualização
+
 ## Configuração de APIs (opcional)
 
 Para buscar capas e metadados automaticamente:
@@ -154,7 +141,7 @@ Cole as chaves na página de **Configurações** do app.
 
 ```
 ├── electron/              # Main process do Electron
-│   ├── main.ts           # Janela principal + IPC handlers
+│   ├── main.ts           # Janela principal + IPC handlers + auto-update
 │   ├── preload.ts        # Context bridge para o renderer
 │   ├── database.ts       # Schema SQLite + inicialização + migrações
 │   └── api-services.ts   # Serviços de busca (RAWG, TMDB, Google Books)
@@ -165,8 +152,10 @@ Cole as chaves na página de **Configurações** do app.
 │   ├── types.ts          # Tipos + constantes
 │   ├── App.tsx           # Layout principal com rotas
 │   └── main.tsx          # Entry point
+├── .github/workflows/    # CI: typecheck/build em PRs, release em tags v*
 ├── build/                # Recursos de build (ícones)
-└── public/               # Assets estáticos
+├── public/               # Assets estáticos
+└── CHANGELOG.md          # Notas de cada versão (viram a descrição do release)
 ```
 
 ## Notas

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
+import UpdateToast from './components/UpdateToast';
 import Dashboard from './pages/Dashboard';
 import InProgressPage from './pages/InProgress';
 import StatisticsPage from './pages/Statistics';
@@ -53,6 +54,7 @@ export default function App() {
           {renderContent()}
         </main>
       </div>
+      <UpdateToast />
     </div>
   );
 }

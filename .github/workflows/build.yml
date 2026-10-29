@@ -61,9 +61,18 @@ jobs:
           path: release/*.exe
           if-no-files-found: error
 
+      - name: Extract release notes from CHANGELOG
+        # Pega a seção "## [X.Y.Z]" da tag; falha se ela não existir para não sair release sem descrição.
+        shell: bash
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="[$v]" '/^## /{p = index($0, v) > 0; next} p' CHANGELOG.md > release-notes.md
+          test -s release-notes.md || { echo "::error::CHANGELOG.md não tem a seção [$v]"; exit 1; }
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
+          body_path: release-notes.md
           # latest.yml + .blockmap são o que o electron-updater do app instalado consulta.
           files: |
             release/*.exe

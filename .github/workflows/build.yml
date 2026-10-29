@@ -64,5 +64,9 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
         with:
-          files: release/*.exe
+          # latest.yml + .blockmap são o que o electron-updater do app instalado consulta.
+          files: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
           generate_release_notes: true

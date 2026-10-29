@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import fs from 'fs';
+import { autoUpdater } from 'electron-updater';
 import { initDatabase, queryAll, queryOne, runSql, saveDatabase, loadConfig, saveConfig, getDbPath, resolveDbPath } from './database';
 import { searchGames, getGameDetails, searchMovies, getMovieDetails, searchTvShows, getTvShowDetails, searchBooks } from './api-services';
 
@@ -57,6 +58,12 @@ app.whenReady().then(async () => {
   await initDatabase();
   setupIpcHandlers();
   createWindow();
+
+  // Auto-update via GitHub Releases (só no instalador NSIS; o portable não se atualiza).
+  // Baixa em segundo plano, avisa com notificação e instala ao fechar o app.
+  if (app.isPackaged && !process.env.PORTABLE_EXECUTABLE_DIR) {
+    autoUpdater.checkForUpdatesAndNotify().catch(err => console.error('Auto-update falhou:', err));
+  }
 });
 
 app.on('window-all-closed', () => {

@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "date-fns": "^4.1.0",
+    "electron-updater": "^6.8.11",
     "lucide-react": "^1.17.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -70,6 +71,11 @@
       ],
       "icon": "build/icon.ico",
       "signAndEditExecutable": false
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "AkiraW5",
+      "repo": "LoreKeeper"
     },
     "nsis": {
       "oneClick": false,

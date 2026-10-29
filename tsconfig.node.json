@@ -9,6 +9,7 @@
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
+    "strict": false,
     "types": ["node"]
   },
   "include": ["vite.config.ts", "electron"]

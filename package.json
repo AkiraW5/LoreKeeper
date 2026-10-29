@@ -1,6 +1,6 @@
 {
   "name": "lorekeeper",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Tracker pessoal de mídias - Jogos, Filmes, Séries, Animes, Mangás, Livros e mais",
   "main": "dist-electron/main.js",
   "author": "Player",

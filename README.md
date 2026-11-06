@@ -91,6 +91,7 @@ A versão portable **não** se atualiza sozinha: baixe a nova versão nos Releas
 - **IGDB** — Capas oficiais, descrições e dados de jogos (fonte principal)
 - **RAWG.io** — Fallback automático para jogos quando o IGDB não responde
 - **TMDB** — Busca de capas e sinopses para filmes, séries e animes
+- **AniList** — Mangás, manhwas e manhuas (sem chave necessária)
 - **Open Library** — Fonte principal para livros
 - **Google Books** — Fallback para busca de livros (sem chave necessária)
 - Ao adicionar qualquer mídia, clique em "Buscar" para preencher automaticamente
@@ -100,11 +101,12 @@ A versão portable **não** se atualiza sozinha: baixe a nova versão nos Releas
 - Escolha onde salvar o banco de dados (Google Drive, OneDrive, Dropbox)
 - Configure as chaves de API gratuitamente
 
-## Novidades da 1.3.0
+## Novidades da 1.4.0
 
-- **IGDB como fonte de jogos** — capas oficiais e dados completos, com o RAWG como reserva automática quando o IGDB não responde
-- **Nova tela de Configurações** — status de cada fonte de metadados e atalho para as novidades da versão
-- Buscas com limite de 8 segundos e aviso claro quando um serviço está fora do ar
+- **Notificação de conquistas** — aviso com som na hora em que você desbloqueia uma conquista
+- **Procurar atualizações** direto nas Configurações
+- **Mangás pelo AniList** — capas em alta e capítulos/volumes preenchidos sozinhos
+- Busca de livros corrigida (voltou a encontrar capas) e nota 11 com o nome certo para cada mídia
 
 O histórico completo de versões está no [CHANGELOG](CHANGELOG.md).
 

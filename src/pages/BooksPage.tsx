@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Edit3, Library } from 'lucide-react';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
-import { Book, MEDIA_GENRES, RATING_LABELS } from '../types';
+import { Book, MEDIA_GENRES, ratingLabel } from '../types';
 import { generateId, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultItem: Omit<Book, 'id' | 'created_at' | 'updated_at'> = {
@@ -25,6 +25,7 @@ export default function BooksPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Book | null>(null);
   const [formData, setFormData] = useState(defaultItem);
+  const searchResults = useRef<any[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Book | null>(null);
 
   useEffect(() => { loadItems(); }, []);
@@ -119,7 +120,7 @@ export default function BooksPage() {
 
                 {item.rating && (
                   <div className="text-[11px] text-dark-400 mt-2">
-                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({ratingLabel(item.rating, 'Livro')})</span>
                   </div>
                 )}
 
@@ -144,6 +145,7 @@ export default function BooksPage() {
               label="Título"
               onSearch={async (query) => {
                 const results = await window.api.search.books(query);
+                searchResults.current = results;
                 return results.map((r: any, i: number) => ({
                   id: i,
                   title: r.title,
@@ -151,21 +153,17 @@ export default function BooksPage() {
                   cover_url: r.cover_url,
                 }));
               }}
-              onSelect={async (result) => {
-                const results = await window.api.search.books(formData.title);
-                const match = results[result.id as number];
-                if (match) {
-                  setFormData(f => ({
-                    ...f,
-                    title: match.title,
-                    author: match.author || f.author,
-                    cover_url: match.cover_url,
-                    description: match.description,
-                    total_pages: match.total_pages || f.total_pages,
-                  }));
-                } else {
-                  setFormData(f => ({ ...f, title: result.title, cover_url: result.cover_url }));
-                }
+              onSelect={(result) => {
+                const match = searchResults.current[result.id as number];
+                if (!match) return;
+                setFormData(f => ({
+                  ...f,
+                  title: match.title,
+                  author: match.author || f.author,
+                  cover_url: match.cover_url,
+                  description: match.description,
+                  total_pages: match.total_pages || f.total_pages,
+                }));
               }}
             />
           </div>
@@ -211,7 +209,7 @@ export default function BooksPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">
-              Nota: {formData.rating !== null ? `${formData.rating} (${RATING_LABELS[formData.rating!]})` : 'Sem nota'}
+              Nota: {formData.rating !== null ? `${formData.rating} (${ratingLabel(formData.rating, 'Livro')})` : 'Sem nota'}
             </label>
             <input type="range" min={1} max={11} value={formData.rating || 7} onChange={e => setFormData(f => ({ ...f, rating: parseInt(e.target.value) }))} className="w-full accent-accent-500" />
           </div>

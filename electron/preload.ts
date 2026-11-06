@@ -1,5 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron';
 
+// Avisa o renderer quando dados mudam (usado para checar conquistas na hora).
+// Escritas em achievements/user_profile são da própria checagem e não contam, senão vira loop.
+const dbListeners = new Set<() => void>();
+function changed<T>(p: Promise<T>): Promise<T> {
+  return p.then(r => { dbListeners.forEach(cb => cb()); return r; });
+}
+
 contextBridge.exposeInMainWorld('api', {
   // Window controls
   minimize: () => ipcRenderer.invoke('window:minimize'),
@@ -10,12 +17,19 @@ contextBridge.exposeInMainWorld('api', {
   db: {
     getAll: (table: string, orderBy?: string) => ipcRenderer.invoke('db:getAll', table, orderBy),
     getById: (table: string, id: string) => ipcRenderer.invoke('db:getById', table, id),
-    insert: (table: string, data: Record<string, any>) => ipcRenderer.invoke('db:insert', table, data),
-    update: (table: string, id: string, data: Record<string, any>) => ipcRenderer.invoke('db:update', table, id, data),
-    delete: (table: string, id: string) => ipcRenderer.invoke('db:delete', table, id),
+    insert: (table: string, data: Record<string, any>) => changed(ipcRenderer.invoke('db:insert', table, data)),
+    update: (table: string, id: string, data: Record<string, any>) => changed(ipcRenderer.invoke('db:update', table, id, data)),
+    delete: (table: string, id: string) => changed(ipcRenderer.invoke('db:delete', table, id)),
     query: (sql: string, params?: any[]) => ipcRenderer.invoke('db:query', sql, params),
     queryOne: (sql: string, params?: any[]) => ipcRenderer.invoke('db:queryOne', sql, params),
-    run: (sql: string, params?: any[]) => ipcRenderer.invoke('db:run', sql, params),
+    run: (sql: string, params?: any[]) => {
+      const p = ipcRenderer.invoke('db:run', sql, params);
+      return /(achievements|user_profile)/i.test(sql) ? p : changed(p);
+    },
+    onChange: (cb: () => void) => {
+      dbListeners.add(cb);
+      return () => { dbListeners.delete(cb); };
+    },
   },
 
   // Settings
@@ -36,6 +50,7 @@ contextBridge.exposeInMainWorld('api', {
     tvShows: (query: string) => ipcRenderer.invoke('api:searchTvShows', query),
     tvShowDetails: (tmdbId: number) => ipcRenderer.invoke('api:tvShowDetails', tmdbId),
     books: (query: string) => ipcRenderer.invoke('api:searchBooks', query),
+    manga: (query: string) => ipcRenderer.invoke('api:searchManga', query),
   },
 
   // Auto-update

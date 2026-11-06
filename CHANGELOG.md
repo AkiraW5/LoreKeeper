@@ -2,6 +2,25 @@
 
 Todas as mudanças relevantes do LoreKeeper. A seção de cada versão vira a descrição do release no GitHub.
 
+## [1.4.0]
+
+### ✨ Novidades
+
+- **Notificação de conquistas** — ao desbloquear uma conquista, aparece um aviso no canto da tela com ícone, nome, XP e raridade, com um somzinho que fica mais elaborado quanto mais rara ela for.
+  - As conquistas agora são verificadas na hora em que você salva algo, sem precisar abrir a página de Conquistas.
+  - Várias de uma vez entram em fila. Clicar no aviso leva para a página de Conquistas.
+  - O som pode ser desligado nas Configurações.
+- **Procurar atualizações** — botão nas Configurações que diz na hora se há versão nova.
+- **Busca de mangás pelo AniList** — capas em alta resolução, autor, tipo (Mangá/Manhwa/Manhua), gênero, capítulos e volumes preenchidos automaticamente.
+
+### 🐛 Correções
+
+- **Busca de livros quase nunca achava nada** — um filtro de idioma errado fazia o Open Library sempre voltar vazio. Agora ele e o Google Books são consultados juntos, priorizando resultados com capa.
+- Capas de livros do Open Library em resolução maior.
+- A nota 11 agora acompanha a mídia: "Filme da vida", "Anime da vida", "Livro da vida"... (antes era sempre "Jogo da vida").
+
+> Na primeira abertura desta versão, as conquistas que você já tinha atingido e ainda não estavam registradas aparecem em sequência.
+
 ## [1.3.1]
 
 ### 🐛 Correções

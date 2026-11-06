@@ -4,7 +4,7 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
-import { Anime, MEDIA_GENRES, RATING_LABELS } from '../types';
+import { Anime, MEDIA_GENRES, ratingLabel } from '../types';
 import { generateId, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultItem: Omit<Anime, 'id' | 'created_at' | 'updated_at'> = {
@@ -120,7 +120,7 @@ export default function AnimePage() {
                 </div>
                 {item.rating && (
                   <div className="text-[11px] text-dark-400 mt-2">
-                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({ratingLabel(item.rating, 'Anime')})</span>
                   </div>
                 )}
 
@@ -209,7 +209,7 @@ export default function AnimePage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">
-              Nota: {formData.rating !== null ? `${formData.rating} (${RATING_LABELS[formData.rating!]})` : 'Sem nota'}
+              Nota: {formData.rating !== null ? `${formData.rating} (${ratingLabel(formData.rating, 'Anime')})` : 'Sem nota'}
             </label>
             <input type="range" min={1} max={11} value={formData.rating || 7} onChange={e => setFormData(f => ({ ...f, rating: parseInt(e.target.value) }))} className="w-full accent-accent-500" />
           </div>

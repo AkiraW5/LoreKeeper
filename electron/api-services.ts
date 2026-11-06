@@ -312,7 +312,7 @@ const OL_COVER = 'https://covers.openlibrary.org/b/olid';
 
 async function searchBooksOpenLibrary(query: string): Promise<BookSearchResult[]> {
   try {
-    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_edition_key,first_sentence,number_of_pages_median,subject,edition_key,cover_i&language=por,eng`;
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_edition_key,first_sentence,number_of_pages_median,subject,edition_key,cover_i&lang=pt`;
     const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return [];
     const data = await res.json();
@@ -323,9 +323,9 @@ async function searchBooksOpenLibrary(query: string): Promise<BookSearchResult[]
         // Build cover URL — prefer cover_edition_key (OLID), fallback to cover_i (ID)
         let cover_url = '';
         if (b.cover_edition_key) {
-          cover_url = `${OL_COVER}/${b.cover_edition_key}-M.jpg`;
+          cover_url = `${OL_COVER}/${b.cover_edition_key}-L.jpg`;
         } else if (b.cover_i) {
-          cover_url = `https://covers.openlibrary.org/b/id/${b.cover_i}-M.jpg`;
+          cover_url = `https://covers.openlibrary.org/b/id/${b.cover_i}-L.jpg`;
         }
         return {
           title: b.title,
@@ -350,7 +350,7 @@ async function searchBooksGoogle(query: string): Promise<BookSearchResult[]> {
     return (data.items || []).map((b: any) => ({
       title: b.volumeInfo?.title || '',
       author: (b.volumeInfo?.authors || []).join(', '),
-      cover_url: b.volumeInfo?.imageLinks?.thumbnail?.replace('http://', 'https://') || '',
+      cover_url: (b.volumeInfo?.imageLinks?.thumbnail || '').replace('http://', 'https://').replace('&edge=curl', ''),
       description: (b.volumeInfo?.description || '').substring(0, 500),
       total_pages: b.volumeInfo?.pageCount || 0,
       genre: (b.volumeInfo?.categories || [])[0] || '',
@@ -360,13 +360,87 @@ async function searchBooksGoogle(query: string): Promise<BookSearchResult[]> {
   }
 }
 
+// Consulta as duas fontes juntas: o Google Books sem chave vive estourando a cota (429) e o Open Library
+// às vezes traz edições sem capa. Junta tudo, tira títulos repetidos e põe quem tem capa primeiro.
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   if (!query.trim()) return [];
+  const [ol, google] = await Promise.all([searchBooksOpenLibrary(query), searchBooksGoogle(query)]);
+  const seen = new Set<string>();
+  return [...ol, ...google]
+    .filter(b => {
+      const key = `${b.title}|${b.author}`.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => Number(!a.cover_url) - Number(!b.cover_url))
+    .slice(0, 8);
+}
 
-  // Try Open Library first (better covers, no API key needed)
-  const olResults = await searchBooksOpenLibrary(query);
-  if (olResults.length > 0) return olResults;
+// ==========================================
+// AniList — Mangás / Manhwas / Manhuas (sem chave)
+// ==========================================
 
-  // Fallback to Google Books
-  return searchBooksGoogle(query);
+export interface MangaSearchResult {
+  title: string;
+  author: string;
+  cover_url: string;
+  genre: string;
+  type: string;
+  total_chapters: number;
+  total_volumes: number;
+}
+
+const ANILIST_GENRES: Record<string, string> = {
+  Action: 'Ação', Adventure: 'Aventura', Comedy: 'Comédia', Drama: 'Drama', Fantasy: 'Fantasia',
+  'Sci-Fi': 'Ficção Científica', Horror: 'Horror', Mystery: 'Mistério', Romance: 'Romance',
+  Thriller: 'Thriller', Psychological: 'Suspense', Sports: 'Esporte', Supernatural: 'Sobrenatural',
+  Mecha: 'Mecha', 'Slice of Life': 'Slice of Life', Ecchi: 'Ecchi',
+};
+
+const ANILIST_TYPES: Record<string, string> = { JP: 'Mangá', KR: 'Manhwa', CN: 'Manhua', TW: 'Manhua' };
+
+const ANILIST_QUERY = `query ($search: String) {
+  Page(perPage: 8) {
+    media(search: $search, type: MANGA, sort: SEARCH_MATCH) {
+      title { romaji english }
+      coverImage { extraLarge }
+      chapters volumes genres countryOfOrigin
+      staff(perPage: 4) { edges { role node { name { full } } } }
+    }
+  }
+}`;
+
+export async function searchManga(query: string): Promise<MangaSearchResult[]> {
+  if (!query.trim()) return [];
+  try {
+    const res = await fetch('https://graphql.anilist.co', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ query: ANILIST_QUERY, variables: { search: query } }),
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) throw new Error(`AniList ${res.status}`);
+    const data = await res.json();
+    return (data.data?.Page?.media || []).map((m: any) => {
+      const staff = m.staff?.edges || [];
+      // Prefere quem escreveu a história; se não houver, quem aparece primeiro
+      const writer = staff.find((e: any) => /story|original/i.test(e.role)) || staff[0];
+      return {
+        title: m.title?.english || m.title?.romaji || '',
+        author: writer?.node?.name?.full || '',
+        cover_url: m.coverImage?.extraLarge || '',
+        genre: (m.genres || []).map((g: string) => ANILIST_GENRES[g]).find(Boolean) || '',
+        type: ANILIST_TYPES[m.countryOfOrigin] || 'Mangá',
+        total_chapters: m.chapters || 0,
+        total_volumes: m.volumes || 0,
+      };
+    });
+  } catch (err) {
+    console.warn('AniList falhou, usando busca de livros:', err);
+    const books = await searchBooks(`${query} manga`);
+    return books.map(b => ({
+      title: b.title, author: b.author, cover_url: b.cover_url, genre: '', type: 'Mangá', total_chapters: 0, total_volumes: 0,
+    }));
+  }
 }

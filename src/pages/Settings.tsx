@@ -1,9 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import {
   Settings, FolderOpen, HardDrive, Cloud, RotateCcw, Key, Eye, EyeOff, CheckCircle,
-  Gamepad2, Film, BookOpen, ExternalLink, Sparkles, ShieldCheck,
+  Gamepad2, Film, BookOpen, ExternalLink, Sparkles, ShieldCheck, RefreshCw, Loader2, Volume2, VolumeX, Trophy,
 } from 'lucide-react';
 import { version } from '../../package.json';
+import { SOUND_KEY } from '../components/AchievementToast';
+
+const UPDATE_MESSAGES: Record<UpdateCheckResult['status'], string> = {
+  latest: 'Você está na versão mais recente.',
+  available: '',
+  unsupported: 'Atualização automática só funciona no app instalado (não no portable nem no modo dev).',
+  error: 'Não foi possível procurar atualizações agora.',
+};
 
 type Config = Record<string, string | undefined>;
 
@@ -73,6 +81,8 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState<Config>({});
   const [draft, setDraft] = useState<Config>({});
   const [justSaved, setJustSaved] = useState<string | null>(null);
+  const [updateCheck, setUpdateCheck] = useState<UpdateCheckResult | 'checking' | null>(null);
+  const [soundOn, setSoundOn] = useState(() => localStorage.getItem(SOUND_KEY) !== 'off');
 
   useEffect(() => {
     loadSettings();
@@ -129,6 +139,16 @@ export default function SettingsPage() {
     setSaved(s => ({ ...s, ...Object.fromEntries(keys.map(k => [k, (draft[k] || '').trim()])) }));
     setJustSaved(group);
     setTimeout(() => setJustSaved(null), 2000);
+  }
+
+  async function checkForUpdates() {
+    setUpdateCheck('checking');
+    setUpdateCheck(await window.api.updates.check());
+  }
+
+  function toggleSound() {
+    localStorage.setItem(SOUND_KEY, soundOn ? 'off' : 'on');
+    setSoundOn(!soundOn);
   }
 
   const field = (key: string) => ({
@@ -355,12 +375,64 @@ export default function SettingsPage() {
             <p className="text-xs text-dark-400 mb-4">
               Rastreador pessoal de mídias: Jogos, Filmes, Séries, Animes, Mangás e Livros.
             </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={checkForUpdates}
+                disabled={updateCheck === 'checking'}
+                className="btn-primary flex items-center justify-center gap-2 text-sm"
+              >
+                {updateCheck === 'checking' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                {updateCheck === 'checking' ? 'Procurando…' : 'Procurar atualizações'}
+              </button>
+              <button
+                onClick={() => window.api.updates.openNotes(version)}
+                className="btn-secondary flex items-center justify-center gap-2 text-sm"
+              >
+                <ExternalLink size={14} />
+                Novidades
+              </button>
+            </div>
+            {updateCheck && updateCheck !== 'checking' && (
+              <div className={`mt-3 px-3 py-2 rounded-lg text-xs border ${
+                updateCheck.status === 'available'
+                  ? 'bg-accent-500/10 border-accent-500/25 text-accent-300'
+                  : updateCheck.status === 'latest'
+                    ? 'bg-green-500/10 border-green-500/20 text-green-300'
+                    : updateCheck.status === 'error'
+                      ? 'bg-red-500/10 border-red-500/20 text-red-300'
+                      : 'bg-dark-700/40 border-dark-600 text-dark-300'
+              }`}>
+                {updateCheck.status === 'available'
+                  ? <>Versão <strong>v{updateCheck.version}</strong> disponível! Use o aviso no canto da tela para atualizar.</>
+                  : UPDATE_MESSAGES[updateCheck.status]}
+              </div>
+            )}
+          </section>
+
+          {/* Notifications */}
+          <section className="stat-card">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+                <Trophy size={20} className="text-yellow-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-dark-100">Conquistas</h2>
+                <p className="text-xs text-dark-400">Aviso no canto da tela quando você desbloqueia uma</p>
+              </div>
+            </div>
             <button
-              onClick={() => window.api.updates.openNotes(version)}
-              className="btn-secondary w-full flex items-center justify-center gap-2 text-sm"
+              onClick={toggleSound}
+              role="switch"
+              aria-checked={soundOn}
+              className="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg bg-dark-900/50 border border-dark-700/60 hover:border-dark-600 transition-colors"
             >
-              <ExternalLink size={14} />
-              Novidades desta versão
+              <span className="flex items-center gap-2 text-sm text-dark-200">
+                {soundOn ? <Volume2 size={16} className="text-accent-400" /> : <VolumeX size={16} className="text-dark-500" />}
+                Som ao desbloquear
+              </span>
+              <span className={`relative w-9 h-5 rounded-full transition-colors ${soundOn ? 'bg-accent-500' : 'bg-dark-600'}`}>
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${soundOn ? 'left-[18px]' : 'left-0.5'}`} />
+              </span>
             </button>
           </section>
         </div>

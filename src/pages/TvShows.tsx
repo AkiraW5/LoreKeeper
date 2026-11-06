@@ -4,7 +4,7 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
-import { TvShow, MEDIA_GENRES, RATING_LABELS } from '../types';
+import { TvShow, MEDIA_GENRES, ratingLabel } from '../types';
 import { generateId, formatDateBR, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultItem: Omit<TvShow, 'id' | 'created_at' | 'updated_at'> = {
@@ -114,7 +114,7 @@ export default function TvShowsPage() {
                 {item.rating && (
                   <div className="flex justify-between text-xs mt-1">
                     <span className="text-dark-400">Nota</span>
-                    <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                    <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({ratingLabel(item.rating, 'Série')})</span>
                   </div>
                 )}
               </div>
@@ -201,7 +201,7 @@ export default function TvShowsPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">
-              Nota: {formData.rating !== null ? `${formData.rating} (${RATING_LABELS[formData.rating!]})` : 'Sem nota'}
+              Nota: {formData.rating !== null ? `${formData.rating} (${ratingLabel(formData.rating, 'Série')})` : 'Sem nota'}
             </label>
             <input type="range" min={1} max={11} value={formData.rating || 7} onChange={e => setFormData(f => ({ ...f, rating: parseInt(e.target.value) }))} className="w-full accent-accent-500" />
           </div>

@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { autoUpdater } from 'electron-updater';
 import { initDatabase, queryAll, queryOne, runSql, saveDatabase, loadConfig, saveConfig, getDbPath, resolveDbPath } from './database';
-import { searchGames, getGameDetails, searchMovies, getMovieDetails, searchTvShows, getTvShowDetails, searchBooks } from './api-services';
+import { searchGames, getGameDetails, searchMovies, getMovieDetails, searchTvShows, getTvShowDetails, searchBooks, searchManga } from './api-services';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -74,9 +74,18 @@ autoUpdater.on('download-progress', p => sendUpdate('update:progress', Math.roun
 autoUpdater.on('update-downloaded', () => autoUpdater.quitAndInstall(true, true));
 autoUpdater.on('error', err => sendUpdate('update:error', err?.message ?? String(err)));
 
+// Retorna o resultado para o botão das Configurações; o aviso (UpdateToast) continua vindo pelo evento update:available.
 ipcMain.handle('update:check', async () => {
-  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
-  await autoUpdater.checkForUpdates().catch(err => console.error('Auto-update falhou:', err));
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return { status: 'unsupported' };
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    return result?.isUpdateAvailable
+      ? { status: 'available', version: result.updateInfo.version }
+      : { status: 'latest' };
+  } catch (err: any) {
+    console.error('Auto-update falhou:', err);
+    return { status: 'error', message: err?.message ?? String(err) };
+  }
 });
 ipcMain.handle('update:download', () => autoUpdater.downloadUpdate());
 ipcMain.handle('update:openNotes', (_event, version: string) =>
@@ -284,6 +293,10 @@ function setupIpcHandlers() {
 
   ipcMain.handle('api:searchBooks', async (_event, query: string) => {
     return searchBooks(query);
+  });
+
+  ipcMain.handle('api:searchManga', async (_event, query: string) => {
+    return searchManga(query);
   });
 
   ipcMain.handle('api:getConfig', () => {

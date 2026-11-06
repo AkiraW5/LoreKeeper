@@ -1,5 +1,11 @@
 /// <reference types="vite/client" />
 
+type UpdateCheckResult =
+  | { status: 'unsupported' }
+  | { status: 'latest' }
+  | { status: 'available'; version: string }
+  | { status: 'error'; message: string };
+
 interface Window {
   api: {
     minimize: () => void;
@@ -14,6 +20,7 @@ interface Window {
       query: (sql: string, params?: any[]) => Promise<any[]>;
       queryOne: (sql: string, params?: any[]) => Promise<any>;
       run: (sql: string, params?: any[]) => Promise<any>;
+      onChange: (cb: () => void) => () => void;
     };
     settings: {
       getDbPath: () => Promise<string>;
@@ -29,13 +36,14 @@ interface Window {
       tvShows: (query: string) => Promise<any[]>;
       tvShowDetails: (tmdbId: number) => Promise<any>;
       books: (query: string) => Promise<any[]>;
+      manga: (query: string) => Promise<any[]>;
     };
     config: {
       get: () => Promise<any>;
       set: (key: string, value: string) => Promise<any>;
     };
     updates: {
-      check: () => Promise<void>;
+      check: () => Promise<UpdateCheckResult>;
       download: () => Promise<unknown>;
       openNotes: (version: string) => Promise<void>;
       on: (channel: 'available' | 'progress' | 'error', cb: (payload: any) => void) => () => void;

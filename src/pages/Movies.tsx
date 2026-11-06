@@ -4,7 +4,7 @@ import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
-import { Movie, MEDIA_GENRES, RATING_LABELS } from '../types';
+import { Movie, MEDIA_GENRES, ratingLabel } from '../types';
 import { generateId, formatDateBR, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultMovie: Omit<Movie, 'id' | 'created_at' | 'updated_at'> = {
@@ -233,7 +233,7 @@ export default function MoviesPage() {
             <input type="number" value={formData.duration_min} onChange={e => setFormData(f => ({ ...f, duration_min: parseInt(e.target.value) || 0 }))} className="input-field" />
           </div>
           <div>
-            <label className="block text-xs font-medium text-dark-300 mb-1">Nota: {formData.rating} ({RATING_LABELS[formData.rating]})</label>
+            <label className="block text-xs font-medium text-dark-300 mb-1">Nota: {formData.rating} ({ratingLabel(formData.rating, 'Filme')})</label>
             <input type="range" min={1} max={11} value={formData.rating} onChange={e => setFormData(f => ({ ...f, rating: parseInt(e.target.value) }))} className="w-full accent-accent-500" />
           </div>
           <div>

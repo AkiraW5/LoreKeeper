@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Trash2, Edit3, BookOpen } from 'lucide-react';
 import Modal from '../components/Modal';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SearchBar from '../components/SearchBar';
 import ApiSearchBox from '../components/ApiSearchBox';
-import { Manga, MEDIA_GENRES, RATING_LABELS } from '../types';
+import { Manga, MEDIA_GENRES, ratingLabel } from '../types';
 import { generateId, getRatingColor, getStatusColor } from '../lib/utils';
 
 const defaultItem: Omit<Manga, 'id' | 'created_at' | 'updated_at'> = {
@@ -26,6 +26,7 @@ export default function MangaPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Manga | null>(null);
   const [formData, setFormData] = useState(defaultItem);
+  const searchResults = useRef<any[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<Manga | null>(null);
 
   useEffect(() => { loadItems(); }, []);
@@ -127,7 +128,7 @@ export default function MangaPage() {
                 )}
                 {item.rating && (
                   <div className="text-[11px] text-dark-400 mt-2">
-                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({RATING_LABELS[item.rating]})</span>
+                    Nota: <span className={`font-bold ${getRatingColor(item.rating)}`}>{item.rating} ({ratingLabel(item.rating, 'Mangá')})</span>
                   </div>
                 )}
 
@@ -151,27 +152,28 @@ export default function MangaPage() {
               placeholder="Ex: One Piece, Solo Leveling..."
               label="Título"
               onSearch={async (query) => {
-                const results = await window.api.search.books(query + ' manga');
+                const results = await window.api.search.manga(query);
+                searchResults.current = results;
                 return results.map((r: any, i: number) => ({
                   id: i,
                   title: r.title,
-                  subtitle: r.author || 'Autor desconhecido',
+                  subtitle: [r.type, r.author, r.total_chapters ? `${r.total_chapters} caps` : ''].filter(Boolean).join(' • '),
                   cover_url: r.cover_url,
                 }));
               }}
-              onSelect={async (result) => {
-                const results = await window.api.search.books(formData.title + ' manga');
-                const match = results[result.id as number];
-                if (match) {
-                  setFormData(f => ({
-                    ...f,
-                    title: match.title,
-                    author: match.author || f.author,
-                    cover_url: match.cover_url,
-                  }));
-                } else {
-                  setFormData(f => ({ ...f, title: result.title, cover_url: result.cover_url }));
-                }
+              onSelect={(result) => {
+                const match = searchResults.current[result.id as number];
+                if (!match) return;
+                setFormData(f => ({
+                  ...f,
+                  title: match.title,
+                  author: match.author || f.author,
+                  cover_url: match.cover_url,
+                  genre: match.genre || f.genre,
+                  type: match.type || f.type,
+                  total_chapters: match.total_chapters || f.total_chapters,
+                  total_volumes: match.total_volumes || f.total_volumes,
+                }));
               }}
             />
           </div>
@@ -222,7 +224,7 @@ export default function MangaPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-dark-300 mb-1">
-              Nota: {formData.rating !== null ? `${formData.rating} (${RATING_LABELS[formData.rating!]})` : 'Sem nota'}
+              Nota: {formData.rating !== null ? `${formData.rating} (${ratingLabel(formData.rating, 'Mangá')})` : 'Sem nota'}
             </label>
             <input type="range" min={1} max={11} value={formData.rating || 7} onChange={e => setFormData(f => ({ ...f, rating: parseInt(e.target.value) }))} className="w-full accent-accent-500" />
           </div>

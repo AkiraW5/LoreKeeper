@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import TitleBar from './components/TitleBar';
 import Sidebar from './components/Sidebar';
 import UpdateToast from './components/UpdateToast';
+import AchievementToast from './components/AchievementToast';
+import { checkAchievements } from './lib/achievements';
 import Dashboard from './pages/Dashboard';
 import InProgressPage from './pages/InProgress';
 import StatisticsPage from './pages/Statistics';
@@ -22,6 +24,18 @@ import { MediaSection } from './types';
 
 export default function App() {
   const [activeSection, setActiveSection] = useState<MediaSection>('dashboard');
+
+  // Checa conquistas ao abrir e logo depois de qualquer mudança nos dados (agrupa salvamentos em sequência)
+  useEffect(() => {
+    const check = () => checkAchievements().catch(err => console.error('Erro ao verificar conquistas:', err));
+    check();
+    let timer: ReturnType<typeof setTimeout>;
+    const off = window.api.db.onChange(() => {
+      clearTimeout(timer);
+      timer = setTimeout(check, 600);
+    });
+    return () => { off(); clearTimeout(timer); };
+  }, []);
 
   function renderContent() {
     switch (activeSection) {
@@ -55,6 +69,7 @@ export default function App() {
         </main>
       </div>
       <UpdateToast />
+      <AchievementToast onOpen={() => setActiveSection('achievements')} />
     </div>
   );
 }

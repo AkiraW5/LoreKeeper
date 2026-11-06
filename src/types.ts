@@ -210,6 +210,11 @@ export const RATING_LABELS: Record<number, string> = {
   11: 'Jogo da vida',
 };
 
+// A nota 11 muda conforme a mídia: "Filme da vida", "Anime da vida"...
+export function ratingLabel(rating: number, media = 'Jogo'): string {
+  return rating === 11 ? `${media} da vida` : RATING_LABELS[rating] || '';
+}
+
 export const DIFFICULTY_LABELS: Record<string, string> = {
   C: 'C (Fácil)',
   B: 'B (Médio)',

@@ -254,12 +254,12 @@ function setupIpcHandlers() {
   // === API SEARCH ===
   ipcMain.handle('api:searchGames', async (_event, query: string) => {
     const cfg = loadConfig();
-    return searchGames(query, cfg.rawgApiKey || '');
+    return searchGames(query, cfg);
   });
 
-  ipcMain.handle('api:gameDetails', async (_event, rawgId: number) => {
+  ipcMain.handle('api:gameDetails', async (_event, id: string) => {
     const cfg = loadConfig();
-    return getGameDetails(rawgId, cfg.rawgApiKey || '');
+    return getGameDetails(id, cfg);
   });
 
   ipcMain.handle('api:searchMovies', async (_event, query: string) => {

@@ -17,6 +17,7 @@ import {
   Library,
   Settings,
 } from 'lucide-react';
+import { version } from '../../package.json';
 import { MediaSection } from '../types';
 
 interface SidebarProps {
@@ -95,7 +96,7 @@ export default function Sidebar({ activeSection, onSectionChange }: SidebarProps
 
       {/* Footer */}
       <div className="p-4 border-t border-dark-700/50">
-        <p className="text-[10px] text-dark-500 text-center">v1.2.0 • Feito com ♥</p>
+        <p className="text-[10px] text-dark-500 text-center">v{version} • Feito com ♥</p>
       </div>
     </aside>
   );

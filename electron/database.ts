@@ -11,6 +11,8 @@ const CONFIG_FILE = 'lorekeeper-config.json';
 
 interface AppConfig {
   dbFolder?: string; // custom folder (e.g. Google Drive)
+  igdbClientId?: string;
+  igdbClientSecret?: string;
   rawgApiKey?: string;
   tmdbApiKey?: string;
 }

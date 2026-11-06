@@ -3,7 +3,7 @@
 // =========================================
 
 export interface GameSearchResult {
-  rawg_id: number;
+  id: string; // "igdb:123" ou "rawg:123"
   name: string;
   cover_url: string;
   released: string;
@@ -69,50 +69,148 @@ export interface BookSearchResult {
 }
 
 // ==========================================
-// RAWG.io — Jogos
+// Jogos — IGDB (principal) com fallback para RAWG.io
 // ==========================================
 
-export async function searchGames(query: string, apiKey: string): Promise<GameSearchResult[]> {
-  if (!apiKey || !query.trim()) return [];
-  try {
-    const url = `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(query)}&page_size=8`;
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.results || []).map((g: any) => ({
-      rawg_id: g.id,
-      name: g.name,
-      cover_url: g.background_image || '',
-      released: g.released || '',
-      genres: (g.genres || []).map((x: any) => x.name),
-      platforms: (g.platforms || []).map((p: any) => p.platform.name),
-      playtime: Math.max(0, Math.round(g.playtime || 0)),
-    }));
-  } catch {
-    return [];
-  }
+const TIMEOUT_MS = 8000;
+
+export interface GameApiKeys {
+  igdbClientId?: string;
+  igdbClientSecret?: string;
+  rawgApiKey?: string;
 }
 
-export async function getGameDetails(rawgId: number, apiKey: string): Promise<GameDetailsResult | null> {
-  if (!apiKey) return null;
-  try {
-    const url = `https://api.rawg.io/api/games/${rawgId}?key=${apiKey}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const g = await res.json();
-    return {
-      name: g.name,
-      cover_url: g.background_image || '',
-      description: (g.description_raw || '').substring(0, 500),
-      developer: (g.developers || []).map((d: any) => d.name).join(', '),
-      genres: (g.genres || []).map((x: any) => x.name),
-      platforms: (g.platforms || []).map((p: any) => p.platform.name),
-      released: g.released || '',
-      playtime: Math.max(0, Math.round(g.playtime || 0)),
-    };
-  } catch {
-    return null;
+// IGDB usa nomes de gênero diferentes; normaliza para os do RAWG, que é o que as telas mapeiam
+const IGDB_GENRES: Record<string, string> = {
+  'Role-playing (RPG)': 'RPG',
+  'Platform': 'Platformer',
+  'Sport': 'Sports',
+  'Simulator': 'Simulation',
+  'Real Time Strategy (RTS)': 'Strategy',
+  'Turn-based strategy (TBS)': 'Strategy',
+  'Tactical': 'Strategy',
+  "Hack and slash/Beat 'em up": 'Action',
+  'Card & Board Game': 'Card',
+  'Point-and-click': 'Adventure',
+  'Visual Novel': 'Adventure',
+};
+
+const IGDB_FIELDS = 'name,cover.image_id,first_release_date,genres.name,platforms.name';
+
+let igdbToken: { clientId: string; value: string; expires: number } | null = null;
+
+async function igdbQuery(endpoint: string, body: string, keys: GameApiKeys): Promise<any[]> {
+  const clientId = keys.igdbClientId!;
+  if (!igdbToken || igdbToken.clientId !== clientId || Date.now() > igdbToken.expires) {
+    const auth = await fetch(
+      `https://id.twitch.tv/oauth2/token?client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(keys.igdbClientSecret!)}&grant_type=client_credentials`,
+      { method: 'POST', signal: AbortSignal.timeout(TIMEOUT_MS) },
+    );
+    if (!auth.ok) throw new Error(`Twitch auth ${auth.status}`);
+    const t = await auth.json();
+    igdbToken = { clientId, value: t.access_token, expires: Date.now() + (t.expires_in - 60) * 1000 };
   }
+  const res = await fetch(`https://api.igdb.com/v4/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Client-ID': clientId, Authorization: `Bearer ${igdbToken.value}` },
+    body,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (res.status === 401) igdbToken = null;
+  if (!res.ok) throw new Error(`IGDB ${res.status}`);
+  return res.json();
+}
+
+function mapIgdbGame(g: any) {
+  return {
+    name: g.name,
+    cover_url: g.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg` : '',
+    released: g.first_release_date ? new Date(g.first_release_date * 1000).toISOString().slice(0, 10) : '',
+    genres: (g.genres || []).map((x: any) => IGDB_GENRES[x.name] || x.name),
+    platforms: (g.platforms || []).map((p: any) => p.name),
+    playtime: 0, // ponytail: IGDB não traz tempo médio aqui; dá pra puxar de game_time_to_beats se fizer falta
+  };
+}
+
+async function igdbSearch(query: string, keys: GameApiKeys): Promise<GameSearchResult[]> {
+  const q = query.replace(/["\\]/g, '');
+  const games = await igdbQuery('games', `search "${q}"; fields ${IGDB_FIELDS}; limit 8;`, keys);
+  return games.map(g => ({ id: `igdb:${g.id}`, ...mapIgdbGame(g) }));
+}
+
+async function igdbDetails(id: number, keys: GameApiKeys): Promise<GameDetailsResult | null> {
+  const [g] = await igdbQuery(
+    'games',
+    `fields ${IGDB_FIELDS},summary,involved_companies.developer,involved_companies.company.name; where id = ${id};`,
+    keys,
+  );
+  if (!g) return null;
+  return {
+    ...mapIgdbGame(g),
+    description: (g.summary || '').substring(0, 500),
+    developer: (g.involved_companies || []).filter((c: any) => c.developer).map((c: any) => c.company?.name).join(', '),
+  };
+}
+
+async function rawgSearch(query: string, apiKey: string): Promise<GameSearchResult[]> {
+  const url = `https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(query)}&page_size=8`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (!res.ok) throw new Error(`RAWG ${res.status}`);
+  const data = await res.json();
+  return (data.results || []).map((g: any) => ({
+    id: `rawg:${g.id}`,
+    name: g.name,
+    cover_url: g.background_image || '',
+    released: g.released || '',
+    genres: (g.genres || []).map((x: any) => x.name),
+    platforms: (g.platforms || []).map((p: any) => p.platform.name),
+    playtime: Math.max(0, Math.round(g.playtime || 0)),
+  }));
+}
+
+async function rawgDetails(id: number, apiKey: string): Promise<GameDetailsResult | null> {
+  const url = `https://api.rawg.io/api/games/${id}?key=${apiKey}`;
+  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (!res.ok) throw new Error(`RAWG ${res.status}`);
+  const g = await res.json();
+  return {
+    name: g.name,
+    cover_url: g.background_image || '',
+    description: (g.description_raw || '').substring(0, 500),
+    developer: (g.developers || []).map((d: any) => d.name).join(', '),
+    genres: (g.genres || []).map((x: any) => x.name),
+    platforms: (g.platforms || []).map((p: any) => p.platform.name),
+    released: g.released || '',
+    playtime: Math.max(0, Math.round(g.playtime || 0)),
+  };
+}
+
+// Tenta IGDB e depois RAWG. Lança erro (mostrado na busca) se nada estiver configurado ou tudo falhar.
+export async function searchGames(query: string, keys: GameApiKeys): Promise<GameSearchResult[]> {
+  if (!query.trim()) return [];
+  const sources: (() => Promise<GameSearchResult[]>)[] = [];
+  if (keys.igdbClientId && keys.igdbClientSecret) sources.push(() => igdbSearch(query, keys));
+  if (keys.rawgApiKey) sources.push(() => rawgSearch(query, keys.rawgApiKey!));
+  if (sources.length === 0) throw new Error('Configure o IGDB ou o RAWG em Configurações para buscar jogos.');
+  for (const source of sources) {
+    try {
+      return await source();
+    } catch (err) {
+      console.warn('Busca de jogos falhou:', err);
+    }
+  }
+  throw new Error('Os serviços de jogos não responderam. Tente de novo em instantes.');
+}
+
+export async function getGameDetails(id: string, keys: GameApiKeys): Promise<GameDetailsResult | null> {
+  const [source, rawId] = String(id).split(':');
+  try {
+    if (source === 'igdb' && keys.igdbClientId && keys.igdbClientSecret) return await igdbDetails(Number(rawId), keys);
+    if (source === 'rawg' && keys.rawgApiKey) return await rawgDetails(Number(rawId), keys.rawgApiKey);
+  } catch (err) {
+    console.warn('Detalhes do jogo falharam:', err);
+  }
+  return null;
 }
 
 // ==========================================
@@ -125,7 +223,7 @@ export async function searchMovies(query: string, apiKey: string): Promise<Movie
   if (!apiKey || !query.trim()) return [];
   try {
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return [];
     const data = await res.json();
     return (data.results || []).slice(0, 8).map((m: any) => ({
@@ -144,7 +242,7 @@ export async function getMovieDetails(tmdbId: number, apiKey: string): Promise<M
   if (!apiKey) return null;
   try {
     const url = `https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return null;
     const m = await res.json();
     const director = (m.credits?.crew || []).find((c: any) => c.job === 'Director')?.name || '';
@@ -170,7 +268,7 @@ export async function searchTvShows(query: string, apiKey: string): Promise<TvSe
   if (!apiKey || !query.trim()) return [];
   try {
     const url = `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(query)}&language=pt-BR&page=1`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return [];
     const data = await res.json();
     return (data.results || []).slice(0, 8).map((s: any) => ({
@@ -189,7 +287,7 @@ export async function getTvShowDetails(tmdbId: number, apiKey: string): Promise<
   if (!apiKey) return null;
   try {
     const url = `https://api.themoviedb.org/3/tv/${tmdbId}?api_key=${apiKey}&language=pt-BR`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return null;
     const s = await res.json();
     return {
@@ -215,7 +313,7 @@ const OL_COVER = 'https://covers.openlibrary.org/b/olid';
 async function searchBooksOpenLibrary(query: string): Promise<BookSearchResult[]> {
   try {
     const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=8&fields=title,author_name,cover_edition_key,first_sentence,number_of_pages_median,subject,edition_key,cover_i&language=por,eng`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return [];
     const data = await res.json();
     return (data.docs || [])
@@ -246,7 +344,7 @@ async function searchBooksOpenLibrary(query: string): Promise<BookSearchResult[]
 async function searchBooksGoogle(query: string): Promise<BookSearchResult[]> {
   try {
     const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=8&langRestrict=pt`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) return [];
     const data = await res.json();
     return (data.items || []).map((b: any) => ({

@@ -94,7 +94,7 @@ function mapRawgPlatformToConsole(rawPlatform: string): string | null {
   if (p.includes('gamecube')) return 'GameCube';
   if (p.includes('nintendo 64') || p === 'n64') return 'N64';
   if (p.includes('super nintendo') || p === 'snes') return 'SNES';
-  if (p === 'nes') return 'NES';
+  if (p === 'nes' || p.includes('nintendo entertainment system')) return 'NES';
   if (p.includes('nintendo 3ds') || p === '3ds') return '3DS';
   if (p.includes('nintendo ds') || p === 'nds') return 'NDS';
   if (p.includes('game boy advance') || p === 'gba') return 'GBA';
@@ -330,7 +330,7 @@ export default function CompletedGamesPage() {
               onSearch={async (query) => {
                 const results = await window.api.search.games(query);
                 return results.map((r: any) => ({
-                  id: r.rawg_id,
+                  id: r.id,
                   title: r.name,
                   subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
                   cover_url: r.cover_url,
@@ -339,7 +339,7 @@ export default function CompletedGamesPage() {
               onSelect={async (result) => {
                 setFormData(f => ({ ...f, name: result.title, cover_url: result.cover_url }));
                 // Fetch full details
-                const details = await window.api.search.gameDetails(result.id as number);
+                const details = await window.api.search.gameDetails(String(result.id));
                 if (details) {
                   setFormData(f => ({
                     ...f,

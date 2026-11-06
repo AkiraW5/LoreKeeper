@@ -88,7 +88,8 @@ A versão portable **não** se atualiza sozinha: baixe a nova versão nos Releas
 
 ### 🔍 Busca de Metadados via API
 
-- **RAWG.io** — Busca automática de capas, descrições e dados de jogos
+- **IGDB** — Capas oficiais, descrições e dados de jogos (fonte principal)
+- **RAWG.io** — Fallback automático para jogos quando o IGDB não responde
 - **TMDB** — Busca de capas e sinopses para filmes, séries e animes
 - **Open Library** — Fonte principal para livros
 - **Google Books** — Fallback para busca de livros (sem chave necessária)
@@ -131,9 +132,10 @@ npm run electron:build
 
 Para buscar capas e metadados automaticamente:
 
-1. **RAWG.io** (jogos) — Crie uma conta gratuita em [rawg.io/apidocs](https://rawg.io/apidocs) e copie a API key
-2. **TMDB** (filmes/séries/animes) — Crie uma conta em [themoviedb.org](https://www.themoviedb.org/) → Settings → API
-3. **Google Books** (livros) — Funciona sem chave!
+1. **IGDB** (jogos, recomendado) — Registre um app em [dev.twitch.tv/console](https://dev.twitch.tv/console) (OAuth Redirect: `http://localhost`) e copie o Client ID e o Client Secret
+2. **RAWG.io** (jogos, fallback) — Crie uma conta gratuita em [rawg.io/apidocs](https://rawg.io/apidocs) e copie a API key
+3. **TMDB** (filmes/séries/animes) — Crie uma conta em [themoviedb.org](https://www.themoviedb.org/) → Settings → API
+4. **Google Books** (livros) — Funciona sem chave!
 
 Cole as chaves na página de **Configurações** do app.
 
@@ -144,7 +146,7 @@ Cole as chaves na página de **Configurações** do app.
 │   ├── main.ts           # Janela principal + IPC handlers + auto-update
 │   ├── preload.ts        # Context bridge para o renderer
 │   ├── database.ts       # Schema SQLite + inicialização + migrações
-│   └── api-services.ts   # Serviços de busca (RAWG, TMDB, Google Books)
+│   └── api-services.ts   # Serviços de busca (IGDB, RAWG, TMDB, Google Books)
 ├── src/                   # Renderer (React)
 │   ├── components/       # Componentes reutilizáveis (Modal, SearchBar, ApiSearchBox...)
 │   ├── pages/            # Páginas de cada seção

@@ -23,7 +23,7 @@ interface Window {
     };
     search: {
       games: (query: string) => Promise<any[]>;
-      gameDetails: (rawgId: number) => Promise<any>;
+      gameDetails: (id: string) => Promise<any>;
       movies: (query: string) => Promise<any[]>;
       movieDetails: (tmdbId: number) => Promise<any>;
       tvShows: (query: string) => Promise<any[]>;

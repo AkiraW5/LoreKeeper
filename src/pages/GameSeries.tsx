@@ -444,7 +444,7 @@ export default function GameSeriesPage() {
               onSearch={async (query) => {
                 const results = await window.api.search.games(query);
                 return results.map((r: any) => ({
-                  id: r.rawg_id,
+                  id: r.id,
                   title: r.name,
                   subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
                   cover_url: r.cover_url,
@@ -498,7 +498,7 @@ export default function GameSeriesPage() {
             onSearch={async (query) => {
               const results = await window.api.search.games(query);
               return results.map((r: any) => ({
-                id: r.rawg_id,
+                id: r.id,
                 title: r.name,
                 subtitle: `${r.released || 'N/A'} • ${r.genres.join(', ')}`,
                 cover_url: r.cover_url,

@@ -28,6 +28,7 @@ export default function ApiSearchBox({
   const [results, setResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -45,11 +46,14 @@ export default function ApiSearchBox({
     if (!value.trim() || value.trim().length < 2) return;
     setSearching(true);
     setShowResults(true);
+    setError(null);
     try {
       const r = await onSearch(value.trim());
       setResults(r);
-    } catch {
+    } catch (err: any) {
       setResults([]);
+      // O IPC prefixa "Error invoking remote method '...': Error: "; fica só a mensagem
+      setError(String(err?.message || err).replace(/^.*Error: /, ''));
     }
     setSearching(false);
   }
@@ -94,7 +98,7 @@ export default function ApiSearchBox({
       </div>
 
       {/* Dropdown Results */}
-      {showResults && (results.length > 0 || searching) && (
+      {showResults && (results.length > 0 || searching || error) && (
         <div className="absolute z-50 left-0 right-0 mt-1 bg-dark-800 border border-dark-600 rounded-xl shadow-2xl max-h-72 overflow-auto">
           {searching && (
             <div className="flex items-center justify-center gap-2 py-4 text-dark-400 text-xs">
@@ -102,7 +106,12 @@ export default function ApiSearchBox({
               Buscando...
             </div>
           )}
-          {!searching && results.length === 0 && (
+          {!searching && error && (
+            <div className="py-4 px-3 text-center text-red-300 text-xs">
+              {error}
+            </div>
+          )}
+          {!searching && !error && results.length === 0 && (
             <div className="py-4 text-center text-dark-500 text-xs">
               Nenhum resultado encontrado
             </div>

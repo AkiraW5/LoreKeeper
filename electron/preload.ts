@@ -30,7 +30,7 @@ contextBridge.exposeInMainWorld('api', {
   // API Search
   search: {
     games: (query: string) => ipcRenderer.invoke('api:searchGames', query),
-    gameDetails: (rawgId: number) => ipcRenderer.invoke('api:gameDetails', rawgId),
+    gameDetails: (id: string) => ipcRenderer.invoke('api:gameDetails', id),
     movies: (query: string) => ipcRenderer.invoke('api:searchMovies', query),
     movieDetails: (tmdbId: number) => ipcRenderer.invoke('api:movieDetails', tmdbId),
     tvShows: (query: string) => ipcRenderer.invoke('api:searchTvShows', query),

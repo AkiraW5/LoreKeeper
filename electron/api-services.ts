@@ -124,7 +124,7 @@ async function igdbQuery(endpoint: string, body: string, keys: GameApiKeys): Pro
 function mapIgdbGame(g: any) {
   return {
     name: g.name,
-    cover_url: g.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big/${g.cover.image_id}.jpg` : '',
+    cover_url: g.cover?.image_id ? `https://images.igdb.com/igdb/image/upload/t_cover_big_2x/${g.cover.image_id}.jpg` : '',
     released: g.first_release_date ? new Date(g.first_release_date * 1000).toISOString().slice(0, 10) : '',
     genres: (g.genres || []).map((x: any) => IGDB_GENRES[x.name] || x.name),
     platforms: (g.platforms || []).map((p: any) => p.name),

@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do LoreKeeper. A seção de cada versão vira a descrição do release no GitHub.
 
+## [1.3.1]
+
+### 🐛 Correções
+
+- **Capas do IGDB em alta resolução** — as capas de jogos agora vêm em 528×748 (antes 264×374). As capas salvas na 1.3.0 são atualizadas automaticamente ao abrir o app.
+
 ## [1.3.0]
 
 ### ✨ Novidades

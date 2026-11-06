@@ -356,6 +356,10 @@ function runMigrations() {
   for (const sql of columns) {
     try { db.run(sql); } catch { /* column already exists */ }
   }
+  // 1.3.0 salvava capas do IGDB em baixa resolução (264x374); sobe para 528x748
+  for (const table of ['completed_games', 'game_backlog', 'game_series', 'game_series_entries']) {
+    db.run(`UPDATE ${table} SET cover_url = REPLACE(cover_url, '/t_cover_big/', '/t_cover_big_2x/') WHERE cover_url LIKE '%/t_cover_big/%'`);
+  }
 }
 
 function seedAchievements() {

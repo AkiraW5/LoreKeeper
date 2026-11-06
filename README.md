@@ -100,10 +100,11 @@ A versão portable **não** se atualiza sozinha: baixe a nova versão nos Releas
 - Escolha onde salvar o banco de dados (Google Drive, OneDrive, Dropbox)
 - Configure as chaves de API gratuitamente
 
-## Novidades da 1.2.2
+## Novidades da 1.3.0
 
-- **Aviso de atualização dentro do app** — quando sai uma versão nova, aparece um aviso discreto perguntando se você quer atualizar, com barra de progresso e link para as novidades
-- Releases com descrição detalhada
+- **IGDB como fonte de jogos** — capas oficiais e dados completos, com o RAWG como reserva automática quando o IGDB não responde
+- **Nova tela de Configurações** — status de cada fonte de metadados e atalho para as novidades da versão
+- Buscas com limite de 8 segundos e aviso claro quando um serviço está fora do ar
 
 O histórico completo de versões está no [CHANGELOG](CHANGELOG.md).
 

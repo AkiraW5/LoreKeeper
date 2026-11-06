@@ -2,6 +2,21 @@
 
 Todas as mudanças relevantes do LoreKeeper. A seção de cada versão vira a descrição do release no GitHub.
 
+## [1.3.0]
+
+### ✨ Novidades
+
+- **IGDB como fonte de jogos** — a busca de jogos agora usa o IGDB (da Twitch), com capas oficiais em formato de caixa, descrição, desenvolvedora, gêneros e plataformas.
+  - **RAWG como reserva:** se o IGDB não responder, a busca cai automaticamente no RAWG. Quem só tem a chave do RAWG continua funcionando como antes.
+  - Para ativar, registre um app em [dev.twitch.tv/console](https://dev.twitch.tv/console) e cole o Client ID e o Client Secret nas Configurações.
+- **Nova tela de Configurações** — cada fonte de metadados (IGDB, RAWG, TMDB, Google Books) tem seu card com status "Ativo" / "Sem chave", e há um atalho para as novidades da versão.
+
+### 🔧 Melhorias
+
+- A busca não fica mais carregando para sempre quando um serviço trava: todas as consultas desistem depois de 8 segundos.
+- A caixa de busca avisa quando falta configurar uma chave ou quando os serviços estão fora do ar, em vez de mostrar só "Nenhum resultado".
+- A versão exibida na barra lateral e nas Configurações agora é sempre a versão real do app (antes mostrava 1.2.0).
+
 ## [1.2.2]
 
 ### ✨ Novidades
